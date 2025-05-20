@@ -24,6 +24,7 @@ Imports:
     pheatmap,
     readr,
     rrvgo,
+    tidyr,
     topGO,
     tximport,
     WGCNA

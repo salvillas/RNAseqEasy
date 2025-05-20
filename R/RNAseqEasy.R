@@ -4,12 +4,12 @@ library(devtools)
 library(testthat)
 library(available)
 
-available("ggplot2")
 usethis::use_git()
 
 usethis::use_github()
 
 use_r("topGO_All")
+use_r("load_topGO_db")
 use_r("RNAseqEasy")
 
 use_mit_license()
@@ -27,6 +27,7 @@ use_rmarkdown_template("topGO_All")
 
 ## List of other packages to import when using this package
 use_package("dplyr", type = "Imports")
+use_package("tidyr", type = "Imports")
 use_package("ggplot2", type = "Imports")
 use_package("readr", type = "Imports")
 use_package("tximport", type = "Imports")
