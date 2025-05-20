@@ -1,3 +1,23 @@
+#' Análisis de enriquecimiento GO con topGO
+#'
+#' Esta función realiza un análisis de términos GO a partir de una lista de genes.
+#'
+#' @param gene_list Vector containing genes of interest
+#' @param all_genes Vector con todos los genes del universo
+#' @param ontology Ontología GO a usar: "BP", "MF" o "CC"
+#' @param Name Name for the resulting files (typically the comparison you are testing)
+#' @return Data frame with enriched GO terms
+#' @examples
+#' # Read data with DEGs from DESeq2
+#' DEGs = read.table()
+#' # Perform GO enrichment of BP with Tak-1 OPDA vs Tak-1 Mock differentially expressed genes
+#' read_table()
+#'
+#' @export
+
+
+
+
 topGO_all <-
 function(DEG, Name, Plot_Ancestors){
   if (is.vector(DEG)) {
