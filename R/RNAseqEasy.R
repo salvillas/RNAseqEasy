@@ -24,6 +24,8 @@ use_data(Mpo_GO_GOSLIM)
 
 use_rmarkdown_template("topGO_All")
 
+use_vignette(name = "topGO_All", title = "Simplify topGO Enrichment and plotting")
+
 
 ## List of other packages to import when using this package
 use_package("dplyr", type = "Imports")
