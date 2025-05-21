@@ -33,6 +33,44 @@ prepare_topGO_genes <- function(DEG, geneUniverse, padj_threshold = 0.05) {
 
 
 
+#' Run GO enrichment analysis using topGO
+#'
+#' This function creates a topGOdata object and runs the enrichment test.
+#'
+#' @param gene_factor Binary factor indicating genes of interest (output of `prepare_topGO_genes()`).
+#' @param geneID2GO Named list mapping gene IDs to GO terms.
+#' @param ontology GO ontology to use: "BP", "MF", or "CC".
+#' @param algorithm Algorithm for topGO test (default: "weight01").
+#' @param statistic Statistical test to use (default: "fisher").
+#'
+#' @return A list with the topGOdata object and the result of the test.
+#' @export
+run_topGO_analysis <- function(gene_factor, geneID2GO,
+                               ontology = "BP",
+                               algorithm = "weight01",
+                               statistic = "fisher") {
+  if (!requireNamespace("topGO", quietly = TRUE)) {
+    stop("The 'topGO' package is required but not installed.")
+  }
+
+  if (!is.factor(gene_factor)) {
+    stop("gene_factor must be a factor.")
+  }
+
+  if (!is.list(geneID2GO)) {
+    stop("geneID2GO must be a named list.")
+  }
+
+  GOdata <- topGO::new("topGOdata",
+                       ontology = ontology,
+                       allGenes = gene_factor,
+                       annot = topGO::annFUN.gene2GO,
+                       gene2GO = geneID2GO)
+
+  result <- topGO::runTest(GOdata, algorithm = algorithm, statistic = statistic)
+
+  return(list(GOdata = GOdata, result = result))
+}
 
 
 
