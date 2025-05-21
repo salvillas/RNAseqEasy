@@ -1,0 +1,65 @@
+---
+title: "RNAseqEasy: GO Enrichment Analysis with topGO"
+author: Salvador Torres Montilla
+date: "Last edited `r format(Sys.time(), '%d %B, %Y')`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RNAseqEasy: GO Enrichment Analysis with topGO}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+# Introduction
+
+This vignette demonstrates how to use the `RNAseqEasy` package to perform GO enrichment analysis using the `topGO_All()` function. We will use a toy dataset to illustrate the workflow.
+
+# Load the package
+
+```{r library, include= FALSE}
+library(RNAseqEasy)
+```
+
+# Prepare input data
+
+We simulate a gene universe, a gene-to-GO mapping, and a list of differentially expressed genes.
+
+```{r input-data}
+# Simulated gene universe
+set.seed(123)
+gene_universe <- paste0("gene", 1:1000)
+
+# Simulated gene-to-GO mapping
+geneID2GO <- lapply(1:1000, function(i) sample(GO.db::GOTERM$GOID, sample(1:3, 1)))
+names(geneID2GO) <- gene_universe
+
+# Simulated DEG list (vector of gene IDs)
+DEG <- sample(gene_universe, 100)
+```
+
+# Run the analysis
+
+```{r topGO_All}
+results <- topGO_All(
+  DEG = DEG,
+  geneID2GO = geneID2GO,
+  name = "toy_example",
+  output_dir = tempdir(),
+  ontology = "BP",
+  plot_ancestors = FALSE,
+  plot_similarity = FALSE
+)
+```
+
+# Visualize results
+```{r Result-visualization}
+# View the results table
+head(results$results_table)
+
+# Plot the bubble plot
+print(results$bubble_plot)
+
+```
+
+
+
