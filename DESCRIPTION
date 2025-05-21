@@ -28,3 +28,7 @@ Imports:
     topGO,
     tximport,
     WGCNA
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
