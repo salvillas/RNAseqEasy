@@ -121,6 +121,49 @@ process_topGO_results <- function(GOdata, result, pval_threshold = 0.05, gene_co
 }
 
 
+#' Plot topGO enrichment results
+#'
+#' This function creates a bubble plot of enriched GO terms using ggplot2.
+#'
+#' @param go_results A data.frame with GO enrichment results (output of `process_topGO_results()`).
+#' @param title Title of the plot.
+#' @param output_path Optional path to save the plot as PDF. If NULL, the plot is not saved.
+#'
+#' @return A ggplot object.
+#' @export
+plot_topGO_results <- function(go_results, title = "GO Enrichment", output_path = NULL) {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("The 'ggplot2' package is required but not installed.")
+  }
+
+  if (is.null(go_results) || nrow(go_results) == 0) {
+    warning("No GO results to plot.")
+    return(NULL)
+  }
+
+  go_results$Term <- factor(go_results$Term, levels = rev(go_results$Term))
+
+  p <- ggplot2::ggplot(go_results, ggplot2::aes(x = Enrichment, y = Term, color = pval)) +
+    ggplot2::geom_point(ggplot2::aes(size = Significant)) +
+    ggplot2::scale_color_gradient2(low = "#253494", mid = "#41b6c4", high = "#edf8b1", midpoint = 0.025) +
+    ggplot2::scale_size_binned() +
+    ggplot2::labs(title = title, x = "Enrichment", y = NULL) +
+    ggplot2::theme_gray() +
+    ggplot2::theme(
+      panel.grid.major.y = ggplot2::element_line(color = "#d4d4d4", linetype = "dashed"),
+      axis.text.y = ggplot2::element_text(face = "bold"),
+      plot.title = ggplot2::element_text(hjust = 0, face = "bold")
+    )
+
+  if (!is.null(output_path)) {
+    ggplot2::ggsave(output_path, plot = p, device = "pdf", width = 10,
+                    height = max(4, round(8 * nrow(go_results) / 50)),
+                    units = "in", scale = 1.5, limitsize = FALSE)
+  }
+
+  return(p)
+}
+
 
 
 
