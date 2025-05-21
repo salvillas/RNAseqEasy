@@ -1,3 +1,46 @@
+#' Prepare genes for topGO analysis
+#'
+#' This function takes a gene vector or a data.frame with differential expression results
+#' and returns a binary factor that shows which genes are in the list of interest.
+#'
+#' @param DEG Vector of genes or data.frame with differential expression results. Genes must be rownames in the data.frame.
+#' @param geneUniverse Vector with all gene names of the organism universe (e.g., `geneID2GO` names).
+#' @param padj_threshold Significance threshold for `padj` if `DEG` is a data.frame.
+#'
+#' @return Binary factor with gene names, to be used in `topGO`.
+#' @export
+prepare_topGO_genes <- function(DEG, geneUniverse, padj_threshold = 0.05) {
+  if (is.vector(DEG)) {
+    selected_genes <- DEG
+  } else if (is.data.frame(DEG)) {
+    if (!"padj" %in% colnames(DEG)) {
+      warning("No 'padj' column found. All genes will be considered.")
+      selected_genes <- rownames(DEG)
+    } else {
+      selected_genes <- rownames(DEG[DEG$padj <= padj_threshold, ])
+    }
+  } else {
+    stop("None of the selected genes match the provided gene universe. Check gene IDs and annotation.")
+  }
+
+  if (!any(selected_genes %in% geneUniverse)) {
+    stop("Gene IDs must correspond with the annotation file provided")
+  }
+  gene_factor <- factor(as.integer(geneUniverse %in% selected_genes))
+  names(gene_factor) <- geneUniverse
+  return(gene_factor)
+}
+
+
+
+
+
+
+
+
+
+
+
 #' Análisis de enriquecimiento GO con topGO
 #'
 #' Esta función realiza un análisis de términos GO a partir de una lista de genes.
@@ -19,8 +62,9 @@
 
 
 topGO_all <-
-function(DEG, Name, Plot_Ancestors){
-  if (is.vector(DEG)) {
+function(DEG, Name, Plot_Ancestors, geneID2GO){
+  geneNames <- names(geneID2GO)
+  if (is.vector(DEG) & DEG[1] %in% geneNames) {
     DEG2 <- factor(as.integer(geneNames_Mpo %in%  DEG))
     names(DEG2) <- geneNames_Mpo
     DEG3 <- new("topGOdata", ontology= "BP", allGenes= DEG2,
@@ -40,7 +84,7 @@ function(DEG, Name, Plot_Ancestors){
       arrange(Enrichment, Significant) %>%
       mutate(Term = factor(Term, levels= Term)) %>%
       filter(Significant>1, Enrichment>1)
-  } else {
+  } else if (is.data.frame(DEG) & rownames(DEG)[1] %in% geneNames) {
     DEG2 <- factor(as.integer(geneNames_Mpo %in%  rownames(subset(DEG, padj <= 0.05))))
     names(DEG2) <- geneNames_Mpo
     DEG3 <- new("topGOdata", ontology= "BP", allGenes= DEG2,
