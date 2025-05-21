@@ -165,6 +165,104 @@ plot_topGO_results <- function(go_results, title = "GO Enrichment", output_path 
 }
 
 
+#' Analyze GO term similarity and visualize clusters
+#'
+#' This function calculates semantic similarity between GO terms, reduces redundancy,
+#' and generates scatterplot and treemap visualizations.
+#'
+#' @param go_results A data.frame with GO enrichment results (must include `pval`).
+#' @param orgdb OrgDb package name (e.g., "org.At.tair.db").
+#' @param ontology GO ontology used ("BP", "MF", or "CC"). Defaults to "BP".
+#' @param semdata Precomputed semantic data (optional).
+#' @param output_prefix Optional prefix for saving plots (PDFs).
+#' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
+#'
+#' @return A list with the similarity matrix, reduced terms, and ggplot objects.
+#' @export
+analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
+                                  ontology = "BP", semdata = NULL,
+                                  output_prefix = NULL, Number_GOs = 20) {
+  if (!requireNamespace("GOSemSim", quietly = TRUE) ||
+      !requireNamespace("rrvgo", quietly = TRUE) ||
+      !requireNamespace("ggplot2", quietly = TRUE) ||
+      !requireNamespace("ggrepel", quietly = TRUE) ||
+      !requireNamespace("treemap", quietly = TRUE) ||
+      !requireNamespace("factoextra", quietly = TRUE)) {
+    stop("Required packages: GOSemSim, rrvgo, ggplot2, ggrepel, treemap, factoextra.")
+  }
+
+  terms <- rownames(go_results)
+  scores <- setNames(-log10(go_results$pval), terms)
+
+  if (is.null(semdata)) {
+    semdata <- GOSemSim::godata(orgdb, ont = ontology)
+  }
+
+  simMatrix <- rrvgo::calculateSimMatrix(terms, orgdb = orgdb,
+                                            ont = ontology, semdata = semdata,
+                                            method = "Rel")
+
+  if (nrow(simMatrix) < 2) {
+    warning("Not enough terms for similarity analysis.")
+    return(NULL)
+  }
+
+  reducedTerms <- rrvgo::reduceSimMatrix(simMatrix, scores = scores,
+                                                      threshold = 0.5, orgdb = orgdb)
+
+  coords <- stats::cmdscale(as.dist(1 - simMatrix), k = 2)
+  df <- cbind(as.data.frame(coords),
+              reducedTerms[match(rownames(coords), reducedTerms$go),
+                           c("term", "parent", "parentTerm", "score")]) %>%
+    dplyr::arrange(-score)
+
+  top_terms <- df$term[1:min(Number_GOs, nrow(df))]
+
+  # Clustering
+  kmax <- if (nrow(df) <= 10) nrow(df) - 1 else 10
+  viz <- factoextra::fviz_nbclust(df[, 1:2], kmeans, method = "silhouette", k.max = kmax)
+  nclust <- as.integer(viz$data$clusters[which.max(viz$data$y)])
+  df$clust <- as.factor(kmeans(df[, 1:2], centers = nclust)$cluster)
+  df$label <- ifelse(df$term %in% top_terms, df$parentTerm, "")
+
+  # Scatterplot
+  scatterplot <- ggplot2::ggplot(df, ggplot2::aes(x = V1, y = V2, color = clust)) +
+    ggplot2::geom_point(ggplot2::aes(size = score), alpha = 0.5) +
+    ggplot2::scale_color_manual(guide = "none", values = as.vector(ggsci::pal_npg("nrc")(10))) +
+    ggplot2::scale_size_continuous(guide = "none", range = c(0, 25)) +
+    ggplot2::theme_minimal() +
+    ggrepel::geom_label_repel(ggplot2::aes(label = label),
+                              data = subset(df, parent == rownames(df)),
+                              box.padding = grid::unit(1, "lines"),
+                              size = 4, max.overlaps = 100)
+
+  # Treemap
+  treemap_file <- NULL
+  if (!is.null(output_prefix)) {
+    scatter_file <- paste0(output_prefix, "_Scatterplot.pdf")
+    treemap_file <- paste0(output_prefix, "_Treemap.pdf")
+    ggplot2::ggsave(scatter_file, plot = scatterplot, width = 10, height = 8, units = "in")
+
+    grDevices::pdf(treemap_file, width = 10, height = 8)
+    treemap::treemap(reducedTerms,
+                     index = c("parentTerm", "term"),
+                     vSize = "score",
+                     type = "index",
+                     title = "",
+                     palette = rep(ggsci::pal_npg("nrc")(10), length(unique(reducedTerms$parent))),
+                     fontcolor.labels = c("#FFFFFFDD", "#00000080"),
+                     bg.labels = 0,
+                     border.col = "#00000080")
+    grDevices::dev.off()
+  }
+
+  return(list(similarity = simMatrix,
+              reduced = reducedTerms,
+              scatterplot = scatterplot,
+              treemap_file = treemap_file))
+}
+
+
 
 
 
