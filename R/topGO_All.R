@@ -73,6 +73,52 @@ run_topGO_analysis <- function(gene_factor, geneID2GO,
 }
 
 
+#' Process topGO enrichment results
+#'
+#' This function filters significant GO terms, calculates enrichment, and returns a tidy result table.
+#'
+#' @param GOdata A `topGOdata` object.
+#' @param result A result object from `runTest()`.
+#' @param pval_threshold P-value cutoff to consider GO terms as significant.
+#' @param gene_count Total number of genes tested (used for enrichment calculation).
+#'
+#' @return A data.frame with GO term statistics, p-values, and enrichment scores.
+#' @export
+process_topGO_results <- function(GOdata, result, pval_threshold = 0.05, gene_count = NULL) {
+  if (!requireNamespace("topGO", quietly = TRUE)) {
+    stop("The 'topGO' package is required but not installed.")
+  }
+
+  # Get significant GO terms
+  pvals <- topGO::score(result)
+  sig_terms <- pvals[pvals <= pval_threshold]
+
+  if (length(sig_terms) == 0) {
+    warning("No significant GO terms found.")
+    return(NULL)
+  }
+
+  # Get term statistics
+  stats <- topGO::termStat(GOdata, whichGO = names(sig_terms))
+  stats$Term <- topGO::Term(rownames(stats))
+  stats$pval <- sig_terms
+
+  # Calculate enrichment
+  if (is.null(gene_count)) {
+    gene_count <- sum(topGO::geneList(GOdata))
+  }
+
+  total_genes <- length(topGO::geneList(GOdata))
+  stats$Enrichment <- (stats$Significant / stats$Annotated) / (gene_count / total_genes)
+
+  # Filter and order
+  stats <- stats %>%
+    dplyr::filter(Significant > 1, Enrichment > 1) %>%
+    dplyr::arrange(Enrichment, Significant) %>%
+    dplyr::mutate(Term = factor(Term, levels = Term))
+
+  return(stats)
+}
 
 
 
