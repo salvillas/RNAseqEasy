@@ -3,6 +3,8 @@ library(roxygen2)
 library(devtools)
 library(testthat)
 library(available)
+library(readr)
+library(dplyr)
 
 # use_r("topGO_All")
 # use_r("load_topGO_db")
@@ -21,6 +23,10 @@ library(available)
 #                             trim_ws = TRUE, col_names = TRUE)
 #
 # use_data(Mpo_GO_GOSLIM, overwrite = TRUE)
+
+# DEG_example_list <- read.delim("G:/Mi unidad/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/DESeq2/1. gh3aMock_vs_Tak1Mock/gh3aMock_vs_Tak1Mock_Sig.txt",
+#                                header = TRUE)
+# use_data(DEG_example_list, overwrite = TRUE)
 #
 # use_rmarkdown_template("topGO_All")
 #
