@@ -18,6 +18,9 @@ prepare_topGO_genes <- function(DEG, geneUniverse, padj_threshold = 0.05) {
       selected_genes <- rownames(DEG)
     } else {
       selected_genes <- rownames(DEG[DEG$padj <= padj_threshold, ])
+      if (is.null(selected_genes)) {
+        stop("None of the selected genes are below the padj threshold.")
+      }
     }
   } else {
     stop("None of the selected genes match the provided gene universe. Check gene IDs and annotation.")
