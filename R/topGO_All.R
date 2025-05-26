@@ -17,7 +17,7 @@ prepare_topGO_genes <- function(DEG, geneUniverse, padj_threshold = 0.05) {
       warning("No 'padj' column found. All genes will be considered.")
       selected_genes <- rownames(DEG)
     } else {
-      selected_genes <- rownames(DEG[DEG$padj <= padj_threshold, ])
+      selected_genes <- rownames(df)[df$padj <= 0.05]
       if (is.null(selected_genes)) {
         stop("None of the selected genes are below the padj threshold.")
       }
