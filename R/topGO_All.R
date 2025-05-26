@@ -64,7 +64,7 @@ run_topGO_analysis <- function(gene_factor, geneID2GO,
     stop("geneID2GO must be a named list.")
   }
 
-  GOdata <- topGO::new("topGOdata",
+  GOdata <- new("topGOdata",
                        ontology = ontology,
                        allGenes = gene_factor,
                        annot = topGO::annFUN.gene2GO,
