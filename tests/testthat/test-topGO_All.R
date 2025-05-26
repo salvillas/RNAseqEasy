@@ -13,7 +13,7 @@ test_that("prepare_topGO_genes works with vector input", {
 
 test_that("prepare_topGO_genes works with data.frame input", {
   geneUniverse <- paste0("Gene", 1:100)
-  df <- data.frame(padj = runif(100), row.names = geneUniverse)
+  df <- data.frame(padj = runif(100, max = 0.1), row.names = geneUniverse)
   gene_factor <- prepare_topGO_genes(df, geneUniverse, padj_threshold = 0.05)
   expect_true(is.factor(gene_factor))
 })
