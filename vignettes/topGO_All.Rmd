@@ -21,11 +21,11 @@ knitr::opts_chunk$set(tidy = FALSE,
                       dev = "png",
                       message = FALSE, error = FALSE, warning = TRUE)
 temp_output_dir <- tempdir()
-```	
+```
 
 ## Introduction
 
-This vignette demonstrates how to use the `RNAseqEasy` package to perform GO enrichment analysis using the `topGO_All()` function. We will use a toy dataset to illustrate the workflow. The main goal is to indentify GO terms representing a list of Genes (e.g., differentially expressed genes) and representing the output in useful plots.
+This vignette demonstrates how to use the `RNAseqEasy` package to perform GO enrichment analysis using the `topGO_All()` function. We will use a toy dataset to illustrate the workflow. The main goal is to identify GO terms representing a list of Genes (e.g., differential expressed genes) and representing the output in useful plots.
 
 The workflow if focused on the `topGO_All()` function, which integrates different steps: preparing the gene data, executing the enrichment analysis using `topGO` package, processing the results and visualizing the data.
 
@@ -33,6 +33,7 @@ First, we import the require packages. `RNAseqEasy` is our package, and 'topGO' 
 
 ```{r load_packages}
 library(RNAseqEasy)
+library(dplyr)
 ```
 
 ## Data preparation
@@ -56,3 +57,13 @@ data("Mpo_GO_GOSLIM", package = "RNAseqEasy")
 head(DEG_example_list)
 head(Mpo_GO_GOSLIM)
 ```
+
+The function *load_topGO_db* can be used to convert `Mpo_GO_GOSLIM` object into a `geneID2GO` list required for *topGO* analysis.
+
+```{r create_geneID2GO}
+geneID2GO <- load_topGO_db(Mpo_GO_GOSLIM, GeneID =  "Transcript", GOterms = "GO")
+
+# Verificamos la estructura de geneID2GO (debería ser una lista nombrada)
+str(head(geneID2GO))
+```
+
