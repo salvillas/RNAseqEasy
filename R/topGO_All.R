@@ -34,6 +34,23 @@ prepare_topGO_genes <- function(DEG, geneUniverse, padj_threshold = 0.05) {
   return(gene_factor)
 }
 
+#' Save topGO results to a text file
+#'
+#' @param go_results Data.frame with GO results.
+#' @param output_path Path to save the file.
+#' @param simplified Logical. If TRUE, only p-values are saved.
+#' @export
+save_topGO_results <- function(go_results, output_path, simplified = FALSE) {
+  if (simplified) {
+    utils::write.table(go_results %>% dplyr::select(pval),
+                       file = output_path, sep = "\t", quote = FALSE,
+                       row.names = TRUE, col.names = FALSE)
+  } else {
+    utils::write.table(go_results,
+                       file = output_path, sep = "\t", quote = FALSE,
+                       row.names = TRUE)
+  }
+}
 
 
 #' Run GO enrichment analysis using topGO
@@ -111,7 +128,7 @@ process_topGO_results <- function(GOdata, result, pval_threshold = 0.05, gene_co
     gene_count <- length(topGO::sigGenes(GOdata))
   }
 
-  total_genes <- length(topGO::geneList(GOdata))
+  total_genes <- length(unique(GOdata@allGenes))
   stats$Enrichment <- (stats$Significant / stats$Annotated) / (gene_count / total_genes)
 
   # Filter and order
