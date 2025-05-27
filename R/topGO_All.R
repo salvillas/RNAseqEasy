@@ -103,12 +103,12 @@ process_topGO_results <- function(GOdata, result, pval_threshold = 0.05, gene_co
 
   # Get term statistics
   stats <- topGO::termStat(GOdata, whichGO = names(sig_terms))
-  stats$Term <- topGO::Term(rownames(stats))
+  stats$Term <- Term(rownames(stats))
   stats$pval <- sig_terms
 
-  # Calculate enrichment
+  # If number of genes in list is not provided, get annotated genes from topGO object
   if (is.null(gene_count)) {
-    gene_count <- sum(topGO::geneList(GOdata))
+    gene_count <- length(topGO::sigGenes(GOdata))
   }
 
   total_genes <- length(topGO::geneList(GOdata))
