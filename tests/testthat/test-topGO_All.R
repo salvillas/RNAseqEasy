@@ -46,7 +46,7 @@ test_that("topGO_All runs end-to-end", {
   geneID2GO <- load_topGO_db(Mpo_GO_GOSLIM, "Transcript", "GO")
   geneUniverse <- unique(Mpo_GO_GOSLIM$Transcript)
   gene_factor <- prepare_topGO_genes(DEG_example_list, geneUniverse)
-  result <- topGO_All(DEG, geneID2GO, name = "test", output_dir = tempdir(), plot_similarity = FALSE)
+  result <- topGO_All(DEG_example_list, geneID2GO, name = "test", output_dir = tempdir(), plot_similarity = FALSE)
   expect_true(is.list(result))
   expect_true("results_table" %in% names(result))
 })
