@@ -346,7 +346,6 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
     result = go_analysis$result,
     results_table = go_results,
     bubble_plot = bubble_plot,
-    ancestor_plot = ancestor_plot,
     similarity = similarity_results
   ))
 }
