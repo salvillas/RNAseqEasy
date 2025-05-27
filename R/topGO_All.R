@@ -201,12 +201,17 @@ plot_topGO_results <- function(go_results, title = "GO Enrichment", output_path 
 #' @param semdata Precomputed semantic data (optional).
 #' @param output_prefix Optional prefix for saving plots (PDFs).
 #' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
+#' @param units Units to set plot dimensions. Default to "in" (inches)
+#' @param width Width units for the plot. Default to 10.
+#' @param height Height units for the plot. Default to max(4, round(8 * nrow(go_results) / 50)), which was empirically obtained to get a nice heigh depending on the number of enriched GO terms.
+
 #'
 #' @return A list with the similarity matrix, reduced terms, and ggplot objects.
 #' @export
 analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
                                   ontology = "BP", semdata = NULL,
-                                  output_prefix = NULL, Number_GOs = 20) {
+                                  output_prefix = NULL, Number_GOs = 20,
+                                  units = "in", width = 10, height = 8) {
   if (!requireNamespace("GOSemSim", quietly = TRUE) ||
       !requireNamespace("rrvgo", quietly = TRUE) ||
       !requireNamespace("ggplot2", quietly = TRUE) ||
@@ -266,9 +271,9 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
   if (!is.null(output_prefix)) {
     scatter_file <- paste0(output_prefix, "_Scatterplot.pdf")
     treemap_file <- paste0(output_prefix, "_Treemap.pdf")
-    ggplot2::ggsave(scatter_file, plot = scatterplot, width = 10, height = 8, units = "in")
+    ggplot2::ggsave(scatter_file, plot = scatterplot, width = 10, height = 8, units = units)
 
-    grDevices::pdf(treemap_file, width = 10, height = 8)
+    grDevices::pdf(treemap_file, width = width, height = height)
     treemap::treemap(reducedTerms,
                      index = c("parentTerm", "term"),
                      vSize = "score",
