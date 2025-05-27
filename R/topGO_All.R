@@ -148,10 +148,15 @@ process_topGO_results <- function(GOdata, result, pval_threshold = 0.05, gene_co
 #' @param go_results A data.frame with GO enrichment results (output of `process_topGO_results()`).
 #' @param title Title of the plot.
 #' @param output_path Optional path to save the plot as PDF. If NULL, the plot is not saved.
+#' @param units Units to set plot dimensions. Default to "in" (inches)
+#' @param width Width units for the plot. Default to 10.
+#' @param height Height units for the plot. Default to max(4, round(8 * nrow(go_results) / 50)), which was empirically obtained to get a nice heigh depending on the number of enriched GO terms.
 #'
 #' @return A ggplot object.
 #' @export
-plot_topGO_results <- function(go_results, title = "GO Enrichment", output_path = NULL) {
+plot_topGO_results <- function(go_results, title = "GO Enrichment", output_path = NULL, units = "in",
+                               width = 10,
+                               height = max(4, round(8 * nrow(go_results) / 50))) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("The 'ggplot2' package is required but not installed.")
   }
@@ -176,9 +181,9 @@ plot_topGO_results <- function(go_results, title = "GO Enrichment", output_path 
     )
 
   if (!is.null(output_path)) {
-    ggplot2::ggsave(output_path, plot = p, device = "pdf", width = 10,
-                    height = max(4, round(8 * nrow(go_results) / 50)),
-                    units = "in", scale = 1.5, limitsize = FALSE)
+    ggplot2::ggsave(output_path, plot = p, device = "pdf", width = width,
+                    height = height,
+                    units = units, scale = 1.5, limitsize = FALSE)
   }
 
   return(p)
