@@ -2,64 +2,57 @@
 title: "RNAseqEasy: GO Enrichment Analysis with topGO"
 author: Salvador Torres Montilla
 date: "Last edited `r format(Sys.time(), '%d %B, %Y')`"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_document:
+    highlight: pygments
+    toc: true
+    fig_width: 5
 vignette: >
   %\VignetteIndexEntry{RNAseqEasy: GO Enrichment Analysis with topGO}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+bibliography: references.bib
 ---
 
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy = FALSE,
+                      cache = FALSE,
+                      dev = "png",
+                      message = FALSE, error = FALSE, warning = TRUE)
+temp_output_dir <- tempdir()
+```	
 
-# Introduction
+## Introduction
 
-This vignette demonstrates how to use the `RNAseqEasy` package to perform GO enrichment analysis using the `topGO_All()` function. We will use a toy dataset to illustrate the workflow.
+This vignette demonstrates how to use the `RNAseqEasy` package to perform GO enrichment analysis using the `topGO_All()` function. We will use a toy dataset to illustrate the workflow. The main goal is to indentify GO terms representing a list of Genes (e.g., differentially expressed genes) and representing the output in useful plots.
 
-# Load the package
+The workflow if focused on the `topGO_All()` function, which integrates different steps: preparing the gene data, executing the enrichment analysis using `topGO` package, processing the results and visualizing the data.
 
-```{r library, include= FALSE}
+First, we import the require packages. `RNAseqEasy` is our package, and 'topGO' a key dependency for the analysis.
+
+```{r load_packages}
 library(RNAseqEasy)
 ```
 
-# Prepare input data
+## Data preparation
 
-We simulate a gene universe, a gene-to-GO mapping, and a list of differentially expressed genes.
+To perform GO enrichment analysis, we need two principal components:
 
-```{r input-data}
-# Simulated gene universe
-set.seed(123)
-gene_universe <- paste0("gene", 1:1000)
+1.  **A list of genes of interest**: It may be a Gene IDs vector or a `data.frame` resulting from a differential gene enrichment analysis (which may include Gene IDs as rownames and, optionally, a `padj` column including significance data for filtering)-
+2.  **Functional annotation of GO terms (`geneID2GO`)**: A named list where each element corresponds to a gene and contains a vector with GOterms associated to this gene.
 
-# Simulated gene-to-GO mapping
-geneID2GO <- lapply(1:1000, function(i) sample(GO.db::GOTERM$GOID, sample(1:3, 1)))
-names(geneID2GO) <- gene_universe
+`RNAseqEasy` package includes example data to illustrate this process:
 
-# Simulated DEG list (vector of gene IDs)
-DEG <- sample(gene_universe, 100)
+-   `DEG_example_list`: A `data.frame` resulting from `DESeq2` analysis, comparing *gh3a* mutant vs Tak-1 in Mock conditions in *Marchantia polymorpha* [@liang2024].
+-   `Mpo_GO_GOSLIM`: A `data.frame` containing GO annotations for *Marchantia polymorpha* transcripts. Relevant columns are "Transcript" (Gene IDs) and "GO" (associated GO term).
+
+We load this example data:
+
+```{r load_example_data}
+data("DEG_example_list", package = "RNAseqEasy")
+data("Mpo_GO_GOSLIM", package = "RNAseqEasy")
+
+head(DEG_example_list)
+head(Mpo_GO_GOSLIM)
 ```
-
-# Run the analysis
-
-```{r topGO_All}
-results <- topGO_All(
-  DEG = DEG,
-  geneID2GO = geneID2GO,
-  name = "toy_example",
-  output_dir = tempdir(),
-  ontology = "BP",
-  plot_ancestors = FALSE,
-  plot_similarity = FALSE
-)
-```
-
-# Visualize results
-```{r Result-visualization}
-# View the results table
-head(results$results_table)
-
-# Plot the bubble plot
-print(results$bubble_plot)
-
-```
-
-
-
