@@ -24,7 +24,7 @@ get_sample_subset <- function(sample_table, selection = NULL) {
         dplyr::filter(dplyr::if_all(dplyr::everything(), ~ !grepl(selection[condition], .)))
     }
   }
-  return(sample_table_some)
+  return(sample_table)
 }
 
 #' Load expression data using tximport
