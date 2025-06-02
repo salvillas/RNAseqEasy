@@ -9,21 +9,21 @@ sample_table <- data.frame(
   stringsAsFactors = FALSE
 )
 
-selection_yes <- list(YES = "sample1")
-selection_no <- list(NO = "sample2")
+selection_yes <- "sample1"
+selection_no <- "sample2"
 
-test_that("get_sample_subset returns full table when selection is NULL or 'None'", {
-  expect_equal(get_sample_subset(sample_table, NULL), sample_table)
-  expect_equal(get_sample_subset(sample_table, "None"), sample_table)
+test_that("get_sample_subset returns full table when Include of Exclude are NULL", {
+  expect_equal(get_sample_subset(sample_table), sample_table)
+  expect_equal(get_sample_subset(sample_table, Include = NULL, Exclude = NULL), sample_table)
 })
 
-test_that("get_sample_subset filters correctly with YES", {
-  result <- get_sample_subset(sample_table, selection_yes)
+test_that("get_sample_subset filters correctly with Include", {
+  result <- get_sample_subset(sample_table, Include = selection_yes)
   expect_true(all(grepl("sample1", result$Folder)))
 })
 
-test_that("get_sample_subset filters correctly with NO", {
-  result <- get_sample_subset(sample_table, selection_no)
+test_that("get_sample_subset filters correctly with Exclude", {
+  result <- get_sample_subset(sample_table, Exclude = selection_no)
   expect_false(any(grepl("sample2", result$Folder)))
 })
 
