@@ -8,11 +8,17 @@
 #' @param sample_table A data frame containing sample metadata.
 #' @param Include A vector of condition(s) to include samples from `sample_table`.
 #' It will include samples matching this/these condition(s) and exclude all others.
+#' Default to NULL.
 #' @param Exclude A vector of condition(s) to exclude samples from `sample_table`.
+#' Default to NULL.
 #' @return A filtered data frame with selected samples.
 get_sample_subset <- function(sample_table, Include = NULL, Exclude = NULL) {
-  names(Include) <- rep("YES", length(Include))
-  names(Exclude) <- rep("NO", length(Exclude))
+  if (!is.null(Include)) {
+    names(Include) <- rep("YES", length(Include))
+  }
+  if (!is.null(Exclude)){
+    names(Exclude) <- rep("NO", length(Exclude))
+  }
   selection <- c(Include, Exclude)
   if (is.null(selection)) {
     return(sample_table)
