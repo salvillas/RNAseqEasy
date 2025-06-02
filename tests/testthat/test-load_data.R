@@ -63,7 +63,12 @@ test_that("add_sample_path throws error if no matching column is found", {
 
 
 test_that("load_tximport_data returns a list with expected structure", {
-  skip("Requires actual quant.sf files and tx2gene mapping to test properly.")
+  data("Marchantia7_tx2gene")
+
+  sampleDir <- "/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/02_Salmon/"
+  sample_table <- read.delim("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/Sample_Data_Wendy.txt")
+
+  load_tximport_data(sampleDir, sample_table, Marchantia7_tx2gene)
 })
 
 test_that("filter_low_counts filters genes correctly", {
