@@ -6,11 +6,14 @@
 #' have been selected before proceeding with downstream analysis.
 #'
 #' @param sample_table A data frame containing sample metadata.
-#' @param selection A named list of filtering conditions. Use names "YES" or "NO".
-#' "YES" will include samples matching the condition and exlcude all others.
-#' "NO" will exclude samples matching the condition. Therefore, "YES" is more restrictive than "NO".
+#' @param Include A vector of condition(s) to include samples from `sample_table`.
+#' It will include samples matching this/these condition(s) and exclude all others.
+#' @param Exclude A vector of condition(s) to exclude samples from `sample_table`.
 #' @return A filtered data frame with selected samples.
-get_sample_subset <- function(sample_table, selection = NULL) {
+get_sample_subset <- function(sample_table, Include = NULL, Exclude = NULL) {
+  names(Include) <- rep("YES", length(Include))
+  names(Exclude) <- rep("NO", length(Exclude))
+  selection <- c(Include, Exclude)
   if (is.null(selection) || identical(selection, "None")) {
     return(sample_table)
   }
