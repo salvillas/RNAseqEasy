@@ -17,6 +17,8 @@ library(dplyr)
 #
 # use_test(name = "topGO_All")
 # test_file("../tests/testthat/test-topGO_All.R")
+# use_test(name = "load_data")
+#
 # library(tidyverse)
 #
 # Mpo_GO_GOSLIM <- read_delim("G:/Mi unidad/Antiguo Drive/CNB/Marchantia/v6.1r1/Blazquez GO_db_no1.csv",
@@ -71,3 +73,7 @@ library(dplyr)
 # library(factoextra)
 #
 #
+
+sampleDir <- "/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/02_Salmon/"
+sample_table <- read.delim("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/Sample_Data_Wendy.txt")
+
