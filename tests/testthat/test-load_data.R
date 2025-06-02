@@ -27,6 +27,41 @@ test_that("get_sample_subset filters correctly with Exclude", {
   expect_false(any(grepl("sample2", result$Folder)))
 })
 
+
+test_that("add_sample_path correctly adds Folder column", {
+
+  sampleDir <- "/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/02_Salmon/"
+  sample_table <- read.delim("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/Sample_Data_Wendy.txt")
+
+  # Run the function
+  result <- add_sample_path(sampleDir, sample_table)
+
+  # Check that Folder column exists
+  expect_true("Folder" %in% colnames(result))
+
+  # Check that all paths are correctly assigned
+  expected_paths <- list.dirs(sampleDir, full.names = FALSE, recursive = FALSE)
+  expect_equal(sort(result$Folder), sort(expected_paths))
+
+})
+
+
+test_that("add_sample_path throws error if no matching column is found", {
+  sampleDir <- "/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/"
+
+  sample_table <- data.frame(
+    ID = c("X", "Y", "Z"),
+    Group = c("A", "B", "A"),
+    stringsAsFactors = FALSE
+  )
+
+  expect_error(
+    add_sample_path(sampleDir, sample_table),
+    "No column in 'sample_table' matches folder names"
+  )
+})
+
+
 test_that("load_tximport_data returns a list with expected structure", {
   skip("Requires actual quant.sf files and tx2gene mapping to test properly.")
 })
