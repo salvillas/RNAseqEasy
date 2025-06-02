@@ -14,7 +14,7 @@ get_sample_subset <- function(sample_table, Include = NULL, Exclude = NULL) {
   names(Include) <- rep("YES", length(Include))
   names(Exclude) <- rep("NO", length(Exclude))
   selection <- c(Include, Exclude)
-  if (is.null(selection) || identical(selection, "None")) {
+  if (is.null(selection)) {
     return(sample_table)
   }
 
