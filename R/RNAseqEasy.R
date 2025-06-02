@@ -9,6 +9,7 @@ library(dplyr)
 # use_r("topGO_All")
 # use_r("load_topGO_db")
 # use_r("RNAseqEasy")
+# use_r("load_data")
 #
 # use_mit_license()
 #
