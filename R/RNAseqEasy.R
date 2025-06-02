@@ -51,6 +51,7 @@ library(dplyr)
 # use_package("ggsci", type = "Imports")
 # use_package("Hmisc", type = "Imports")
 # use_package("openxlsx", type = "Imports")
+# use_package("phylotools", type = "Imports")
 #
 #
 #
@@ -74,6 +75,17 @@ library(dplyr)
 #
 #
 
-sampleDir <- "/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/02_Salmon/"
-sample_table <- read.delim("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/Sample_Data_Wendy.txt")
-
+# sampleDir <- "/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/02_Salmon/"
+# sample_table <- read.delim("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/Sample_Data_Wendy.txt")
+# Marchantia7_Transcripts <- get.fasta.name("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Marchantia/v7.1/MpTak_v7.1.mRNA.fa", clean_name = FALSE)
+#
+# use_data(Marchantia7_Transcripts, overwrite = TRUE)
+#
+# Marchantia7_tx2gene <- data.frame(Name = Marchantia7_Transcripts) %>%
+#   separate(Name, sep = " ", into = c("TXNAME", "CDS")) %>%
+#   mutate(GENEID = str_sub(TXNAME, 1, -3)) %>%
+#   dplyr::select(-CDS)
+#
+# use_data(Marchantia7_tx2gene, overwrite = TRUE)
+#
+# Example_Wendy <- load_tximport_data(samplesDir = sampleDir, sample_table = sample_table, tx2gene = Marchantia7_tx2gene)
