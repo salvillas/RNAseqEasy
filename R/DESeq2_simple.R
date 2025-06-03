@@ -35,13 +35,17 @@ save_deseq_results <- function(res, output_dir, name) {
 #' @return No return value. A PDF heatmap is saved.
 #' @export
 plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6, height = 8) {
-  # Filter significant genes
-  sig_genes <- rownames(subset(res, padj <= 0.05))
-  mat <- assay(dds)[sig_genes, ]
-  mat <- mat - rowMeans(mat)
+  f1 <- function(x) str_split(x, pattern = "_")[[1]][1] # In each sample name there are different things separated by "_" (name, run, etc...). With this function we will get the first one, that is, the real sample name
+
+  select <-  as.data.frame(subset(res, padj <= 0.05)) # we select the genes we want to plot
+  ntd <- normTransform(dds) # this gives log2(n + 1)
+  heatmap_data <- assay(ntd)[rownames(select),]
+  colnames(heatmap_data) <- sapply(colnames(heatmap_data), f1)
+  heatmap_data_ann <- as.data.frame(colData(dds)) %>% dplyr::select(matches(variables)) # we create a data-frame with the phenotypic labels to plot
+  rownames(heatmap_data_ann) <- sapply(rownames(heatmap_data_ann), f1)
 
   # Create heatmap
-  pheatmap::pheatmap(mat, annotation_col = colData(dds)[, variables, drop = FALSE],
+  pheatmap::pheatmap(heatmap_data, annotation_col = heatmap_data_ann,
                      show_rownames = FALSE, fontsize_row = 8, fontsize_col = 8,
                      filename = file.path(output_dir, paste0(name, "_heatmap.pdf")),
                      width = width, height = height)
@@ -56,7 +60,7 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' heatmaps and runs GO enrichment analysis for significant genes.
 #'
 #' @param output_path Directory where results will be saved.
-#' @param samplesDir Directory containing sample folders with quant.sf files.
+#' @param sampleDir Directory containing sample folders with quant.sf files.
 #' @param sample_table Data frame with sample metadata.
 #' @param Selection Named vector indicating samples to include/exclude.
 #' @param Variable Character. Column name in sample_table used for grouping.
@@ -67,6 +71,7 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @param Reduced Logical. Whether to use a reduced design (LRT test). Default is FALSE.
 #' @param Reduced_design A formula specifying the reduced model (required if `reduced = TRUE`).
 #' @param log2FCtopGO Numeric. log2(fold change) threshold for GO analysis. Default is 1.
+#' @param geneID2GO Named list mapping gene IDs to GO terms.
 #' @param ontology GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".
 #' @param algorithm Algorithm for topGO test (default: "weight01").
 #' @param statistic Statistical test to use (default: "fisher").
@@ -76,18 +81,18 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #'
 #' @return No return value. Results are saved to disk.
 #' @export
-DESeq2_simple <- function(output_path, samplesDir, sample_table, Include = NULL, Exclude = NULL,
+DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, Exclude = NULL,
                           tx2gene, min_count = 10, min_samples = 3,
                           Variable, Design, Group = "NO", Name, Contrast,
                           Reduced = FALSE, Reduced_design = NULL,
-                          FCtopGO = 1, ontology = "BP", plot_similarity = TRUE,
-                          algorithm = "weight01",
+                          log2FCtopGO = 1, ontology = "BP", plot_similarity = TRUE,
+                          geneID2GO, algorithm = "weight01",
                           statistic = "fisher",
                           orgdb = "org.At.tair.db", semdata = NULL) {
 
-  sample_table <- add_sample_path(sampleDir, sample_table)
   sample_table_some <- get_sample_subset(sample_table, Include = Include,
                                          Exclude = Exclude)
+  sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table_some)
   txi <- load_tximport_data(sampleDir, sample_table_some, tx2gene)
 
   dds <- DESeqDataSetFromTximport(txi, colData = sample_table_some, design = as.formula(paste("~", Design)))
@@ -175,21 +180,21 @@ DESeq2_simple <- function(output_path, samplesDir, sample_table, Include = NULL,
   up_down_genes <- c(up_genes, down_genes)
 
   if (length(up_down_genes) > 1) {
-    topGO_All(up_down_genes, geneID2GO, name = paste0(Name, "_All"),
+    topGO_All(up_down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_All"),
               output_dir = output_path, ontology = ontology,
               plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
               orgdb = orgdb, semdata = semdata)
   }
 
   if (length(up_genes) > 1) {
-    topGO_Up <- topGO_All(up_genes, geneID2GO, name = paste0(Name, "_Up"),
+    topGO_Up <- topGO_All(up_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Up"),
                           output_dir = output_path, ontology = ontology,
                           plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
                           orgdb = orgdb, semdata = semdata)
   }
 
   if (length(down_genes) > 1) {
-    topGO_Down <- topGO_All(down_genes, geneID2GO, name = paste0(Name, "_Down"),
+    topGO_Down <- topGO_All(down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Down"),
                             output_dir = output_path, ontology = ontology,
                             plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
                             orgdb = orgdb, semdata = semdata)
