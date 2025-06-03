@@ -17,7 +17,7 @@
 
 load_topGO_db <- function(Annotation_file, GeneID, GOterms){
   # First, we rename columns to make it easier
-  Annotation_file %>% rename(ID = GeneID,
+  Annotation_file %>% dplyr::rename(ID = GeneID,
                              GO = GOterms)
   ## We remove duplicated rows
   Annotation_file <- Annotation_file[!duplicated(Annotation_file),]

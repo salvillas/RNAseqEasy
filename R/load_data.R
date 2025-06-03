@@ -100,7 +100,11 @@ add_sample_path <- function(sampleDir, sample_table) {
 #' @param tx2gene A data frame with columns TXNAME and GENEID.
 #' @return A tximport object with abundance data.
 load_tximport_data <- function(sampleDir, sample_table, tx2gene) {
-  sample_table_dir <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table)
+  if ("Folder" %in% colnames(sample_table) & all(rownames(sample_table) == sample_table$Folder)) {
+    sample_table_dir <- sample_table
+  } else {
+    sample_table_dir <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table)
+  }
   files <- file.path(sampleDir, sample_table_dir$Folder, "quant.sf")
   names(files) <- sample_table$Folder
   tximport::tximport(files, type = "salmon", tx2gene = tx2gene)
