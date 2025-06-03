@@ -304,6 +304,8 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
 #' @param name Identifier for output files. If genes comes from a biological comparison, it is recommended to use that name
 #' @param output_dir Directory to save results (default: current working directory).
 #' @param ontology GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".
+#' @param algorithm Algorithm for topGO test (default: "weight01").
+#' @param statistic Statistical test to use (default: "fisher").
 #' @param plot_similarity Logical, whether to analyze and visualize GO term similarity.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
@@ -312,6 +314,8 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
 #' @export
 topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
                       output_dir = ".", ontology = "BP",
+                      algorithm = "weight01",
+                      statistic = "fisher"
                       plot_similarity = TRUE,
                       orgdb = "org.At.tair.db", semdata = NULL) {
 
@@ -323,7 +327,7 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
   gene_factor <- prepare_topGO_genes(DEG, geneUniverse)
 
   # 2. Execute GO analysis
-  go_analysis <- run_topGO_analysis(gene_factor, geneID2GO, ontology = ontology)
+  go_analysis <- run_topGO_analysis(gene_factor, geneID2GO, ontology = ontology, algorithm = algorithm, statistic = statistic)
 
   # 3. Process results
   go_results <- process_topGO_results(go_analysis$GOdata, go_analysis$result,
