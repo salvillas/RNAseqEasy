@@ -10,6 +10,7 @@ library(dplyr)
 # use_r("load_topGO_db")
 # use_r("RNAseqEasy")
 # use_r("load_data")
+# use_r("PCA_analysis")
 #
 # use_mit_license()
 #
@@ -18,6 +19,7 @@ library(dplyr)
 # use_test(name = "topGO_All")
 # test_file("../tests/testthat/test-topGO_All.R")
 # use_test(name = "load_data")
+# use_test(name = "PCA_analysis")
 #
 # library(tidyverse)
 #
