@@ -315,7 +315,7 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
 topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
                       output_dir = ".", ontology = "BP",
                       algorithm = "weight01",
-                      statistic = "fisher"
+                      statistic = "fisher",
                       plot_similarity = TRUE,
                       orgdb = "org.At.tair.db", semdata = NULL) {
 
