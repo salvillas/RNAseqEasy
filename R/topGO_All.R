@@ -82,10 +82,10 @@ run_topGO_analysis <- function(gene_factor, geneID2GO,
   }
 
   GOdata <- new("topGOdata",
-                       ontology = ontology,
-                       allGenes = gene_factor,
-                       annot = topGO::annFUN.gene2GO,
-                       gene2GO = geneID2GO)
+                ontology = ontology,
+                allGenes = gene_factor,
+                annot = topGO::annFUN.gene2GO,
+                gene2GO = geneID2GO)
 
   result <- topGO::runTest(GOdata, algorithm = algorithm, statistic = statistic)
 
@@ -229,8 +229,8 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
   }
 
   simMatrix <- rrvgo::calculateSimMatrix(terms, orgdb = orgdb,
-                                            ont = ontology, semdata = semdata,
-                                            method = "Rel")
+                                         ont = ontology, semdata = semdata,
+                                         method = "Rel")
 
   if (nrow(simMatrix) < 2) {
     warning("Not enough terms for similarity analysis.")
@@ -238,7 +238,7 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
   }
 
   reducedTerms <- rrvgo::reduceSimMatrix(simMatrix, scores = scores,
-                                                      threshold = 0.5, orgdb = orgdb)
+                                         threshold = 0.5, orgdb = orgdb)
 
   coords <- stats::cmdscale(as.dist(1 - simMatrix), k = 2)
   df <- cbind(as.data.frame(coords),
