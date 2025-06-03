@@ -20,7 +20,8 @@ calculate_pca <- function(dds, ntop = 500) {
 #' This function generates a PCA plot using ggplot2.
 #'
 #' @param pca_result Output from `calculate_pca()`.
-#' @param variables Character vector of column names in colData(vsd) to use for grouping.
+#' @param variables Character vector of two column names from `sample_table` used for grouping.
+#' The first variable will determine the point shapes, and the second will determine the point colors in the PCA plot.
 #' @param colors Named vector of colors for groups.
 #' @param components Integer vector of length 2 indicating which PCs (1 to 4) to plot
 #' @param name Character. Name used for saving the plot.
@@ -36,6 +37,12 @@ plot_pca <- function(pca_result, variables, colors, components = c(1, 2), name =
   percentVar <- pca_result$percentVar
   if (!all(variables %in% names(colData(vsd)))) {
     stop("The argument 'variables' must match columns in colData(vsd).")
+  }
+
+  if (length(variables) > 2) {
+    warning("You have provided more than 2 variables. Only the first will be used for point shapes
+    and the second for colors. Additional variables will be ignored. Consider combining variables
+    into a single grouping factor if needed.")
   }
 
   intgroup.df <- as.data.frame(colData(vsd)[, variables, drop = FALSE])
@@ -75,7 +82,8 @@ plot_pca <- function(pca_result, variables, colors, components = c(1, 2), name =
 #' This function runs the full PCA pipeline: transformation, PCA computation, and plotting.
 #'
 #' @param dds A DESeqDataSet object.
-#' @param variables Character vector of column names in colData(dds) to use for grouping.
+#' @param variables Character vector of two column names from `sample_table` used for grouping.
+#' The first variable will determine the point shapes, and the second will determine the point colors in the PCA plot.
 #' @param colors Named vector of colors for groups.
 #' @param components Integer vector of length 2 indicating which PCs (1 to 4) to plot
 #' @param name Character. Name used for saving the plot.
