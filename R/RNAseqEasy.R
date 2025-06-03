@@ -11,6 +11,7 @@ library(dplyr)
 # use_r("RNAseqEasy")
 # use_r("load_data")
 # use_r("PCA_analysis")
+# use_r("DESeq2_simple")
 #
 # use_mit_license()
 #
@@ -20,6 +21,7 @@ library(dplyr)
 # test_file("../tests/testthat/test-topGO_All.R")
 # use_test(name = "load_data")
 # use_test(name = "PCA_analysis")
+# use_test(name = "DESeq2_simple")
 #
 # library(tidyverse)
 #
