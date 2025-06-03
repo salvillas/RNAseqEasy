@@ -63,7 +63,7 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @param Design Character. Design formula for DESeq2 (e.g., "~ condition").
 #' @param Group Character. Whether to use custom contrasts ("YES" or "NO").
 #' @param Name Character. Base name for output files.
-#' @param Contrast List. Custom contrasts for DESeq2 results.
+#' @param Contrast Character Custom contrasts for DESeq2 results.
 #' @param Reduced Logical. Whether to use a reduced design (LRT test). Default is FALSE.
 #' @param Reduced_design A formula specifying the reduced model (required if `reduced = TRUE`).
 #' @param log2FCtopGO Numeric. log2(fold change) threshold for GO analysis. Default is 1.
