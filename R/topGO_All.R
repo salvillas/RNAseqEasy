@@ -240,7 +240,7 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
   reducedTerms <- rrvgo::reduceSimMatrix(simMatrix, scores = scores,
                                          threshold = 0.5, orgdb = orgdb)
 
-  coords <- stats::cmdscale(as.dist(1 - simMatrix), k = 2)
+  coords <- stats::cmdscale(as.dist(1 - simMatrix), k = 2, eig=TRUE)$points
   df <- cbind(as.data.frame(coords),
               reducedTerms[match(rownames(coords), reducedTerms$go),
                            c("term", "parent", "parentTerm", "score")]) %>%
@@ -251,7 +251,8 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
   # Clustering
   kmax <- if (nrow(df) <= 10) nrow(df) - 1 else 10
   viz <- factoextra::fviz_nbclust(df[, 1:2], kmeans, method = "silhouette", k.max = kmax)
-  nclust <- as.integer(viz$data$clusters[which.max(viz$data$y)])
+  nclust <- as.integer(viz$data[viz$data$y == max(viz$data$y),"clusters"])
+  set.seed(123)
   df$clust <- as.factor(kmeans(df[, 1:2], centers = nclust)$cluster)
   df$label <- ifelse(df$term %in% top_terms, df$parentTerm, "")
 
@@ -260,18 +261,25 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
     ggplot2::geom_point(ggplot2::aes(size = score), alpha = 0.5) +
     ggplot2::scale_color_manual(guide = "none", values = as.vector(ggsci::pal_npg("nrc")(10))) +
     ggplot2::scale_size_continuous(guide = "none", range = c(0, 25)) +
+    ggplot2::scale_x_continuous(name="") +
+    ggplot2::scale_y_continuous(name="") +
     ggplot2::theme_minimal() +
+    ggplot2::theme(axis.text.x=ggplot2::element_blank(),
+                   axis.text.y=ggplot2::element_blank(),
+                   panel.grid = ggplot2::element_blank())+
     ggrepel::geom_label_repel(ggplot2::aes(label = label),
                               data = subset(df, parent == rownames(df)),
                               box.padding = grid::unit(1, "lines"),
-                              size = 4, max.overlaps = 100)
+                              size = 10, max.overlaps = 100)
+
+
 
   # Treemap
   treemap_file <- NULL
   if (!is.null(output_prefix)) {
     scatter_file <- paste0(output_prefix, "_Scatterplot.pdf")
     treemap_file <- paste0(output_prefix, "_Treemap.pdf")
-    ggplot2::ggsave(scatter_file, plot = scatterplot, width = 10, height = 8, units = units)
+    ggplot2::ggsave(scatter_file, plot = scatterplot, width = 18, height = 10, units = units, scale= 1.5, limitsize = FALSE)
 
     grDevices::pdf(treemap_file, width = width, height = height)
     treemap::treemap(reducedTerms,
@@ -307,6 +315,7 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
 #' @param algorithm Algorithm for topGO test (default: "weight01").
 #' @param statistic Statistical test to use (default: "fisher").
 #' @param plot_similarity Logical, whether to analyze and visualize GO term similarity.
+#' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
 #'
@@ -316,7 +325,7 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
                       output_dir = ".", ontology = "BP",
                       algorithm = "weight01",
                       statistic = "fisher",
-                      plot_similarity = TRUE,
+                      plot_similarity = TRUE, Number_GOs = 20,
                       orgdb = "org.At.tair.db", semdata = NULL) {
 
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
@@ -351,7 +360,7 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
   if (plot_similarity) {
     similarity_results <- analyze_GO_similarity(go_results, orgdb = orgdb,
                                                 ontology = ontology,
-                                                semdata = semdata,
+                                                semdata = semdata, Number_GOs = Number_GOs,
                                                 output_prefix = output_prefix)
   }
 

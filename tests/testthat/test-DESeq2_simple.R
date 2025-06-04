@@ -2,6 +2,7 @@
 library(testthat)
 library(RNAseqEasy)
 library(topGO)
+library(DESeq2)
 
 # Crear datos simulados mínimos
 sample_table <- data.frame(

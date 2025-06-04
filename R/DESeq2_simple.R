@@ -35,7 +35,7 @@ save_deseq_results <- function(res, output_dir, name) {
 #' @return No return value. A PDF heatmap is saved.
 #' @export
 plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6, height = 8) {
-  f1 <- function(x) str_split(x, pattern = "_")[[1]][1] # In each sample name there are different things separated by "_" (name, run, etc...). With this function we will get the first one, that is, the real sample name
+  f1 <- function(x) stringr::str_split(x, pattern = "_")[[1]][1] # In each sample name there are different things separated by "_" (name, run, etc...). With this function we will get the first one, that is, the real sample name
 
   select <-  as.data.frame(subset(res, padj <= 0.05)) # we select the genes we want to plot
   ntd <- normTransform(dds) # this gives log2(n + 1)
@@ -76,6 +76,7 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @param algorithm Algorithm for topGO test (default: "weight01").
 #' @param statistic Statistical test to use (default: "fisher").
 #' @param plot_similarity Logical, whether to analyze and visualize GO term similarity.
+#' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
 #'
@@ -87,7 +88,7 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
                           Reduced = FALSE, Reduced_design = NULL,
                           log2FCtopGO = 1, ontology = "BP", plot_similarity = TRUE,
                           geneID2GO, algorithm = "weight01",
-                          statistic = "fisher",
+                          statistic = "fisher", Number_GOs = 20,
                           orgdb = "org.At.tair.db", semdata = NULL) {
 
   sample_table_some <- get_sample_subset(sample_table, Include = Include,
@@ -95,13 +96,13 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
   sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table_some)
   txi <- load_tximport_data(sampleDir, sample_table_some, tx2gene)
 
-  dds <- DESeqDataSetFromTximport(txi, colData = sample_table_some, design = as.formula(paste("~", Design)))
+  dds <- DESeq2::DESeqDataSetFromTximport(txi, colData = sample_table_some, design = as.formula(paste("~", Design)))
   dds <- filter_low_counts(dds, min_count = min_count, min_samples = min_samples)
 
   if (Reduced) {
-    dds <- DESeq(dds, test = "LRT", reduced = Reduced_design)
+    dds <- DESeq2::DESeq(dds, test = "LRT", reduced = Reduced_design)
   } else {
-    dds <- DESeq(dds)
+    dds <- DESeq2::DESeq(dds)
   }
 
   if (Group == "YES"){
@@ -168,7 +169,7 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
 
 
   # Guardar resultados
-  res <- results(dds, contrast = Contrast)
+  res <- DESeq2::results(dds, contrast = Contrast)
   save_deseq_results(res, output_path, Name)
 
   # Heatmap
@@ -179,25 +180,31 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
   down_genes <- rownames(subset(res, padj <= 0.05 & log2FoldChange <= -log2FCtopGO))
   up_down_genes <- c(up_genes, down_genes)
 
+  if (!dir.exists("topGO")) {
+    dir.create("topGO", showWarnings = FALSE)
+  }
+
+  topGO_path <- file.path(output_path, "topGO")
+
   if (length(up_down_genes) > 1) {
     topGO_All(up_down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_All"),
-              output_dir = output_path, ontology = ontology,
+              output_dir = topGO_path, ontology = ontology,
               plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-              orgdb = orgdb, semdata = semdata)
+              Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata)
   }
 
   if (length(up_genes) > 1) {
     topGO_Up <- topGO_All(up_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Up"),
-                          output_dir = output_path, ontology = ontology,
+                          output_dir = topGO_path, ontology = ontology,
                           plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-                          orgdb = orgdb, semdata = semdata)
+                          Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata)
   }
 
   if (length(down_genes) > 1) {
     topGO_Down <- topGO_All(down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Down"),
-                            output_dir = output_path, ontology = ontology,
+                            output_dir = topGO_path, ontology = ontology,
                             plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-                            orgdb = orgdb, semdata = semdata)
+                            Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata)
   }
 
   Output <- list(Up = topGO_Up,
