@@ -1,5 +1,3 @@
-#' Create a DESeqDataSet object from tximport output
-#'
 #' Save DESeq2 results to text files
 #'
 #' This function writes the full and significant DESeq2 results to tab-delimited text files.
