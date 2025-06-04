@@ -48,7 +48,8 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
   pheatmap::pheatmap(heatmap_data, annotation_col = heatmap_data_ann,
                      show_rownames = FALSE, fontsize_row = 8, fontsize_col = 8,
                      filename = file.path(output_dir, paste0(name, "_heatmap.pdf")),
-                     width = width, height = height)
+                     width = width, height = height, cluster_rows=TRUE, cluster_cols=TRUE,
+                     scale = "row")
 }
 
 
