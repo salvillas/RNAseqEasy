@@ -97,7 +97,7 @@ add_sample_path <- function(sampleDir, sample_table) {
 #'
 #' @param sampleDir Directory containing Salmon quantification files.
 #' @param sample_table A data frame with sample metadata.
-#' @param tx2gene A data frame with columns TXNAME and GENEID.
+#' @param tx2gene A data frame with columns TXNAME and GENEID (transcript-to-gene mapping).
 #' @return A tximport object with abundance data.
 load_tximport_data <- function(sampleDir, sample_table, tx2gene) {
   if ("Folder" %in% colnames(sample_table) & all(rownames(sample_table) == sample_table$Folder)) {

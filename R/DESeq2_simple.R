@@ -66,6 +66,7 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' Default to NULL.
 #' @param Exclude A vector of condition(s) to exclude samples from `sample_table`.
 #' Default to NULL.
+#' @param tx2gene A data frame with columns TXNAME and GENEID (transcript-to-gene mapping).
 #' @param Variable Character. Column name in sample_table used for grouping.
 #' @param Design Character. Design formula for DESeq2 (e.g., "~ condition").
 #' @param Group Character. Whether to use custom contrasts ("YES" or "NO").
