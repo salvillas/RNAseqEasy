@@ -256,8 +256,40 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
   df$clust <- as.factor(kmeans(df[, 1:2], centers = nclust)$cluster)
   df$label <- ifelse(df$term %in% top_terms, df$parentTerm, "")
 
+  df_modified <- df %>%
+    tibble::rownames_to_column("GO_ID") %>%
+    dplyr::group_by(clust) %>%
+    dplyr::group_modify(~ {
+      # .x contains current clúster data
+      data_current_cluster <- .x
+
+      # Verify if all labels in this cluster are empty
+      if (all(data_current_cluster$label == "")) {
+        # If all labels are empty:
+        # 1. Arrange in desc according to score values
+        cluster_modified <- data_current_cluster %>%
+          arrange(desc(score))
+
+        # 2. Identify rows to be updated (first two, unless cluster is smaller)
+        rows_to_update_idx <- head(1:nrow(cluster_modified), 2)
+
+        # 3. Update 'label' column of these rows with 'partenTerm' value
+        if (length(rows_to_update_idx) > 0) {
+          cluster_modified$label[rows_to_update_idx] <- cluster_modified$parentTerm[rows_to_update_idx]
+        }
+        # Return modified cluster (and arranged according to 'score')
+        return(cluster_modified)
+      } else {
+        # Return previous cluster if there were labelled rows already
+        return(data_current_cluster)
+      }
+    }) %>%
+    ungroup() %>% # Ungroup to obtain final modified data frame
+    tibble::column_to_rownames("GO_ID")
+
+
   # Scatterplot
-  scatterplot <- ggplot2::ggplot(df, ggplot2::aes(x = V1, y = V2, color = clust)) +
+  scatterplot <- ggplot2::ggplot(df_modified, ggplot2::aes(x = V1, y = V2, color = clust)) +
     ggplot2::geom_point(ggplot2::aes(size = score), alpha = 0.5) +
     ggplot2::scale_color_manual(guide = "none", values = as.vector(ggsci::pal_npg("nrc")(10))) +
     ggplot2::scale_size_continuous(guide = "none", range = c(0, 25)) +
@@ -268,7 +300,7 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
                    axis.text.y=ggplot2::element_blank(),
                    panel.grid = ggplot2::element_blank())+
     ggrepel::geom_label_repel(ggplot2::aes(label = label),
-                              data = subset(df, parent == rownames(df)),
+                              data = subset(df_modified, parent == rownames(df_modified)),
                               box.padding = grid::unit(1, "lines"),
                               size = 10, max.overlaps = 100)
 
