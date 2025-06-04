@@ -13,6 +13,7 @@ library(dplyr)
 # use_r("PCA_analysis")
 # use_r("DESeq2_simple")
 # use_r("TPM_all")
+# use_r("WGCNA_all")
 #
 # use_mit_license()
 #
