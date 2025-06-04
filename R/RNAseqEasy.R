@@ -12,6 +12,7 @@ library(dplyr)
 # use_r("load_data")
 # use_r("PCA_analysis")
 # use_r("DESeq2_simple")
+# use_r("TPM_all")
 #
 # use_mit_license()
 #
@@ -22,6 +23,7 @@ library(dplyr)
 # use_test(name = "load_data")
 # use_test(name = "PCA_analysis")
 # use_test(name = "DESeq2_simple")
+# use_test(name = "TPM_all")
 #
 # library(tidyverse)
 #
