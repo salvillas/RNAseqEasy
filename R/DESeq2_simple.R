@@ -61,7 +61,11 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @param output_path Directory where results will be saved.
 #' @param sampleDir Directory containing sample folders with quant.sf files.
 #' @param sample_table Data frame with sample metadata.
-#' @param Selection Named vector indicating samples to include/exclude.
+#' @param Include A vector of condition(s) to include samples from `sample_table`.
+#' It will include samples matching this/these condition(s) and exclude all others.
+#' Default to NULL.
+#' @param Exclude A vector of condition(s) to exclude samples from `sample_table`.
+#' Default to NULL.
 #' @param Variable Character. Column name in sample_table used for grouping.
 #' @param Design Character. Design formula for DESeq2 (e.g., "~ condition").
 #' @param Group Character. Whether to use custom contrasts ("YES" or "NO").
