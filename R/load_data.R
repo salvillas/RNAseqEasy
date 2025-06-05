@@ -77,10 +77,10 @@ add_sample_path <- function(sampleDir, sample_table) {
 
   # Merge folder paths into sample_table
   sample_table <- merge(
-    sample_table,
     folder_table,
-    by.x = best_match_col,
-    by.y = "Sample",
+    sample_table,
+    by.x = "Sample",
+    by.y = best_match_col,
     all.x = TRUE
   )
 
