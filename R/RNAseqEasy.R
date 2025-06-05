@@ -25,6 +25,7 @@ library(dplyr)
 # use_test(name = "PCA_analysis")
 # use_test(name = "DESeq2_simple")
 # use_test(name = "TPM_all")
+# use_test(name = "WGCNA_all")
 #
 # library(tidyverse)
 #
@@ -96,3 +97,6 @@ library(dplyr)
 # use_data(Marchantia7_tx2gene, overwrite = TRUE)
 #
 # Example_Wendy <- load_tximport_data(samplesDir = sampleDir, sample_table = sample_table, tx2gene = Marchantia7_tx2gene)
+# output_DESeq2 <- read.delim("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/DESeq2/4. OPDA_effect_gh3a_compared_to_Tak1/OPDA_effect_gh3a_compared_to_Tak1_Sig.txt",
+#                             header = TRUE)
+# use_data(output_DESeq2, overwrite = TRUE)
