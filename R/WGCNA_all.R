@@ -9,7 +9,7 @@
 #' @export
 prepare_traits <- function(sample_table, Variables) {
   datTraits <- sample_table
-  elements <- "Name"
+  elements <- "Sample"
   for (Var in Variables) {
     for (Element in unique(sample_table[[Var]])) {
       datTraits[[Element]] <- ifelse(datTraits[[Var]] == Element, 1, 0)
@@ -50,7 +50,6 @@ plot_sample_clustering <- function(datExpr, output_path) {
 #' @param sft Output from WGCNA::pickSoftThreshold().
 #' @param output_path Directory where the plot will be saved.
 #'
-file is saved.
 #' @export
 plot_soft_threshold <- function(sft, output_path) {
   cex1 <- 0.9
@@ -62,7 +61,7 @@ plot_soft_threshold <- function(sft, output_path) {
        type = "n", main = "Scale independence")
   text(sft$fitIndices[, 1],
        -sign(sft$fitIndices[, 3]) * sft$fitIndices[, 2],
-       labels = powers, cex = cex1, col = "red")
+       labels = c(1:10, seq(12, 40, 2)), cex = cex1, col = "red")
   abline(h = 0.90, col = "red")
   dev.off()
 }
@@ -163,16 +162,16 @@ plot_module_summaries <- function(net, TPM_filt, sample_table, Variables, Colors
     norm_counts <- normalize_df(counts)
     summary <- colMeans(norm_counts)
     Module_summary <- rbind(Module_summary, summary)
-    rownames(Module_summary)[nrow(Module_summary)] <- capitalize(color)
+    rownames(Module_summary)[nrow(Module_summary)] <- Hmisc::capitalize(color)
     write.table(counts, file = file.path(output_path, paste0(color, "_genes.txt")),
                 quote = FALSE, sep = "\t", row.names = TRUE)
-    Label_Module[capitalize(color)] <- paste(capitalize(color), "(", nrow(counts), " genes)")
+    Label_Module[Hmisc::capitalize(color)] <- paste(Hmisc::capitalize(color), "(", nrow(counts), " genes)")
   }
 
   Module_summary_df <- as.data.frame(Module_summary)
   Module_summary_df$Module <- rownames(Module_summary_df)
   Module_summary_long <- tidyr::pivot_longer(Module_summary_df, -Module, names_to = "Sample", values_to = "value")
-  Module_summary_long <- merge(Module_summary_long, sample_table, by.x = "Sample", by.y = "Name")
+  Module_summary_long <- merge(Module_summary_long, sample_table, by = "Sample")
 
   if (is.null(Colors_plot)) {
     unique_groups <- unique(sample_table[[Variables[1]]])
@@ -180,12 +179,17 @@ plot_module_summaries <- function(net, TPM_filt, sample_table, Variables, Colors
     Colors_plot <- setNames(palette, unique_groups)
   }
 
+  facets_formula <- if (length(Variables) == 3) {
+    as.formula(paste0("Module~", Variable[3]))
+  } else {
+    as.formula("~Module")
+  }
+
   p <- ggplot2::ggplot(Module_summary_long, ggplot2::aes_string(x = Variables[2], y = "value", group = Variables[1])) +
     ggplot2::geom_point(ggplot2::aes_string(color = Variables[1]), size = 3, shape = 20, alpha = 0.5) +
     ggplot2::geom_line(stat = "summary", fun = mean, ggplot2::aes_string(color = Variables[1]), size = 1) +
     ggplot2::scale_color_manual(values = Colors_plot) +
-    ggplot2::scale_fill_manual(values = Colors_plot) +
-    ggplot2::facet_wrap(if_else(length(Variables) == 3, as.formula(paste("Module~", Variables[3])), ~Module),
+    ggplot2::facet_wrap(facets_formula,
                         scales = "free_y", ncol = NumberCol, labeller = labeller(Module = Label_Module)) +
     ggplot2::labs(title = paste("WGCNA Modules Summary", Name), y = "Normalized expression") +
     annotate("segment", x=-Inf, xend=Inf, y=-Inf, yend=-Inf)+
@@ -235,9 +239,10 @@ normalize_df <- function(df) {
 #'
 #' This function performs GO enrichment analysis using topGO for each module identified by WGCNA.
 #'
-#' @param net WGCNA network object.
 #' @param geneID2GO Named list mapping gene IDs to GO terms.
-#' @param output_path Directory where results will be saved.
+#' @param Name Character. Base name for '"Name"_geneInfo.csv' previously created with WGCNA.
+#' @param input_path Directory where '"Name"_geneInfo.csv' file was saved.
+#' @param output_path_topGO Directory where results will be saved.
 #' @param ontology GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".
 #' @param algorithm Algorithm for topGO test (default: "weight01").
 #' @param statistic Statistical test to use (default: "fisher").
@@ -248,29 +253,26 @@ normalize_df <- function(df) {
 #'
 #' @return A named list with GO enrichment results per module.
 #' @export
-run_topGO_for_modules <- function(net, geneID2GO,
-                                  output_path, ontology = "BP",
+run_topGO_for_modules <- function(geneID2GO, Name,
+                                  input_path, output_path_topGO, ontology = "BP",
                                   algorithm = "weight01",
                                   statistic = "fisher",
                                   plot_similarity = TRUE, Number_GOs = 20,
                                   orgdb = "org.At.tair.db", semdata = NULL) {
-  geneInfo <- read.csv(file.path(output_path, "geneInfo.csv"))
+  geneInfo <- read.csv(file.path(input_path, paste(Name, "geneInfo.csv", sep = "_")))
   results_list <- list()
 
   for (color in unique(geneInfo$moduleColor)) {
     genes <- geneInfo$Genes[geneInfo$moduleColor == color]
     topGO_module <- topGO_All(DEG = genes, geneID2GO = geneID2GO, name = color,
-                              output_dir = output_path, ontology = ontology,
+                              output_dir = output_path_topGO, ontology = ontology,
                               algorithm = algorithm, statistic = statistic,
                               plot_similarity = plot_similarity, Number_GOs = Number_GOs,
                               orgdb = orgdb, semdata = semdata)
-
-      results_list[[color]] <- topGO_module
-    }
+    results_list[[color]] <- topGO_module
   }
-
   return(results_list)
-}
+  }
 
 
 #' WGCNA Modules Analysis
@@ -278,7 +280,7 @@ run_topGO_for_modules <- function(net, geneID2GO,
 #' This function performs WGCNA analysis to identify modules of co-expressed genes and their association with traits.
 #'
 #' @param output_path Directory where results will be saved.
-#' @param samplesDir Directory containing sample folders with quant.sf files.
+#' @param sampleDir Directory containing sample folders with quant.sf files.
 #' @param sample_table Data frame with sample metadata.
 #' @param Selection Named vector indicating samples to include/exclude.
 #' @param DEGs Vector of differentially expressed genes.
@@ -289,6 +291,7 @@ run_topGO_for_modules <- function(net, geneID2GO,
 #' @param Name Character. Base name for output files.
 #' @param Colors_plot Named vector of colors for groups.
 #' @param NumberCol Integer. Number of columns for facet_wrap in ggplot.
+#' @param geneID2GO Named list mapping gene IDs to GO terms.
 #' @param ontology GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".
 #' @param algorithm Algorithm for topGO test (default: "weight01").
 #' @param statistic Statistical test to use (default: "fisher").
@@ -299,9 +302,9 @@ run_topGO_for_modules <- function(net, geneID2GO,
 #'
 #' @return A list with WGCNA results and plots.
 #' @export
-WGCNA_Modules <- function(output_path, samplesDir, sample_table, Include = NULL, Exclude = NULL, DEGs, Variables,
+WGCNA_Modules <- function(output_path, sampleDir, sample_table, Include = NULL, Exclude = NULL, DEGs, Variables,
                           tx2gene, Filter = NULL, Power, Name, Colors_plot = NULL, NumberCol = 1,
-                          ontology = "BP", algorithm = "weight01", statistic = "fisher",
+                          geneID2GO, ontology = "BP", algorithm = "weight01", statistic = "fisher",
                           plot_similarity = TRUE, Number_GOs = 20,
                           orgdb = "org.At.tair.db", semdata = NULL) {
   # Subset samples
@@ -309,7 +312,7 @@ WGCNA_Modules <- function(output_path, samplesDir, sample_table, Include = NULL,
                                          Exclude = Exclude)
   sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table_some)
   # Load expression data
-  txi_some <- load_tximport_data(samplesDir, sample_table_some, tx2gene)
+  txi_some <- load_tximport_data(sampleDir, sample_table_some, tx2gene)
   TPM_all <- as.data.frame(txi_some$abundance)
   # In each sample name there are different things separated by "_" (name, run, etc...). With this function we will get the first one, that is, the real sample name
   f1 <- function(x) stringr::str_split(x, pattern = "_")[[1]][1]
@@ -326,7 +329,7 @@ WGCNA_Modules <- function(output_path, samplesDir, sample_table, Include = NULL,
   if (!is.null(Filter)) {
     if (all(Filter %in% colnames(TPM_filt))) {
       TPM_filt <- TPM_filt[,!names(TPM_filt) %in% Filter]
-      datTraits <- datTraits[!datTraits$Name %in% Filter,]
+      datTraits <- datTraits[!datTraits$Sample %in% Filter,]
     }
   }
 
@@ -358,16 +361,21 @@ WGCNA_Modules <- function(output_path, samplesDir, sample_table, Include = NULL,
                           pamRespectsDendro = FALSE, saveTOMs = TRUE, saveTOMFileBase = "Salva", verbose = 3)
 
   # Save module info and plots
-  rownames(datTraits) <- datTraits$Name
-  datTraits$Name <- NULL
-  save_module_info(net, datExpr, datTraits, output_path)
+  rownames(datTraits) <- datTraits$Sample
+  datTraits$Sample <- NULL
+  save_module_info(net, datExpr, datTraits, output_path, Name)
   plot_module_trait_relationships(net, datExpr, datTraits, output_path)
   plot_module_summaries(net, TPM_filt, sample_table_some, Variables, Colors_plot, NumberCol, Name, output_path)
 
   # GO enrichment
-  topGO_results <- run_topGO_for_modules(net, geneID2GO_Mpo, output_path, ontology,
-                                         algorithm, statistic, plot_similarity, Number_GOs,
-                                         orgdb, semdata)
+  if (!dir.exists("topGO")) {
+    dir.create("topGO", showWarnings = FALSE)
+  }
+
+  topGO_path <- file.path(output_path, "topGO")
+  topGO_results <- run_topGO_for_modules(geneID2GO = geneID2GO, Name = Name, input_path = output_path, output_path_topGO = topGO_path, ontology = ontology,
+                                         algorithm = algorithm, statistic = statistic, plot_similarity = plot_similarity,
+                                         Number_GOs = Number_GOs,orgdb = orgdb, semdata = semdata)
 
   return(topGO_results)
 }
