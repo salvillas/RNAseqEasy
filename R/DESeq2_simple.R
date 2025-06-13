@@ -36,10 +36,10 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
   f1 <- function(x) stringr::str_split(x, pattern = "_")[[1]][1] # In each sample name there are different things separated by "_" (name, run, etc...). With this function we will get the first one, that is, the real sample name
 
   select <-  as.data.frame(subset(res, padj <= 0.05)) # we select the genes we want to plot
-  ntd <- normTransform(dds) # this gives log2(n + 1)
-  heatmap_data <- assay(ntd)[rownames(select),]
+  ntd <- DESeq2::normTransform(dds) # this gives log2(n + 1)
+  heatmap_data <- SummarizedExperiment::assay(ntd)[rownames(select),]
   colnames(heatmap_data) <- sapply(colnames(heatmap_data), f1)
-  heatmap_data_ann <- as.data.frame(colData(dds)) %>% dplyr::select(matches(variables)) # we create a data-frame with the phenotypic labels to plot
+  heatmap_data_ann <- as.data.frame(SummarizedExperiment::colData(dds)) %>% dplyr::select(matches(variables)) # we create a data-frame with the phenotypic labels to plot
   rownames(heatmap_data_ann) <- sapply(rownames(heatmap_data_ann), f1)
 
   # Create heatmap
@@ -124,39 +124,39 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
   }
 
   # get the model matrix
-  mod_mat <- model.matrix(design(dds), colData(dds))
+  mod_mat <- model.matrix(design(dds), SummarizedExperiment::colData(dds))
 
   Alt_contrasts <- as.character()
 
   # Define coefficient vectors for each condition
   for (Condition in Variable) {
-    for (Element in unique(colData(dds)[,Condition])) {
-      assign(Element, colMeans(mod_mat[colData(dds)[,Condition] == Element, ]), envir = .GlobalEnv)
+    for (Element in unique(SummarizedExperiment::colData(dds)[,Condition])) {
+      assign(Element, colMeans(mod_mat[SummarizedExperiment::colData(dds)[,Condition] == Element, ]), envir = .GlobalEnv)
       Alt_contrasts <- append(Alt_contrasts, Element)
     }
   }
 
   if (length(Variable) == 2) {
-    for (Primero in unique(colData(dds)[,Variable[1]])) {
-      for (Segundo in unique(colData(dds)[,Variable[2]])) {
-        assign(paste(Primero, Segundo, sep = "_"), colMeans(mod_mat[colData(dds)[,Variable[1]] == Primero & colData(dds)[,Variable[2]] == Segundo, ]), envir = .GlobalEnv)
+    for (Primero in unique(SummarizedExperiment::colData(dds)[,Variable[1]])) {
+      for (Segundo in unique(SummarizedExperiment::colData(dds)[,Variable[2]])) {
+        assign(paste(Primero, Segundo, sep = "_"), colMeans(mod_mat[SummarizedExperiment::colData(dds)[,Variable[1]] == Primero & SummarizedExperiment::colData(dds)[,Variable[2]] == Segundo, ]), envir = .GlobalEnv)
         Alt_contrasts <- append(Alt_contrasts, paste(Primero, Segundo, sep = "_"))
       }
     }
   }
 
   if (length(Variable) == 3) {
-    for (Primero in unique(colData(dds)[,Variable[1]])) {
-      for (Segundo in unique(colData(dds)[,Variable[2]])) {
-        assign(paste(Primero, Segundo, sep = "_"), colMeans(mod_mat[colData(dds)[,Variable[1]] == Primero & colData(dds)[,Variable[2]] == Segundo, ]), envir = .GlobalEnv)
+    for (Primero in unique(SummarizedExperiment::colData(dds)[,Variable[1]])) {
+      for (Segundo in unique(SummarizedExperiment::colData(dds)[,Variable[2]])) {
+        assign(paste(Primero, Segundo, sep = "_"), colMeans(mod_mat[SummarizedExperiment::colData(dds)[,Variable[1]] == Primero & SummarizedExperiment::colData(dds)[,Variable[2]] == Segundo, ]), envir = .GlobalEnv)
         Alt_contrasts <- append(Alt_contrasts, paste(Primero, Segundo, sep = "_"))
-        for (Tercero in unique(colData(dds)[,Variable[3]])) {
-          assign(paste(Primero, Segundo, Tercero, sep = "_"), colMeans(mod_mat[colData(dds)[,Variable[1]] == Primero & colData(dds)[,Variable[2]] == Segundo & colData(dds)[,Variable[3]] == Tercero, ]), envir = .GlobalEnv)
+        for (Tercero in unique(SummarizedExperiment::colData(dds)[,Variable[3]])) {
+          assign(paste(Primero, Segundo, Tercero, sep = "_"), colMeans(mod_mat[SummarizedExperiment::colData(dds)[,Variable[1]] == Primero & SummarizedExperiment::colData(dds)[,Variable[2]] == Segundo & SummarizedExperiment::colData(dds)[,Variable[3]] == Tercero, ]), envir = .GlobalEnv)
           Alt_contrasts <- append(Alt_contrasts, paste(Primero, Segundo, Tercero, sep = "_"))
         }
       }
-      for (Tercero in unique(colData(dds)[,Variable[3]])) {
-        assign(paste(Primero, Tercero, sep = "_"), colMeans(mod_mat[colData(dds)[,Variable[1]] == Primero & colData(dds)[,Variable[3]] == Tercero, ]), envir = .GlobalEnv)
+      for (Tercero in unique(SummarizedExperiment::colData(dds)[,Variable[3]])) {
+        assign(paste(Primero, Tercero, sep = "_"), colMeans(mod_mat[SummarizedExperiment::colData(dds)[,Variable[1]] == Primero & SummarizedExperiment::colData(dds)[,Variable[3]] == Tercero, ]), envir = .GlobalEnv)
         Alt_contrasts <- append(Alt_contrasts, paste(Primero, Tercero, sep = "_"))
       }
     }
