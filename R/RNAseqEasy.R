@@ -42,6 +42,7 @@ library(dplyr)
 # use_rmarkdown_template("topGO_All")
 #
 # use_vignette(name = "topGO_All", title = "Simplify topGO Enrichment and plotting")
+# use_vignette(name = "RNAseqEasy", title = "Integration of RNAseq Analysis tools")
 #
 #
 # ## List of other packages to import when using this package

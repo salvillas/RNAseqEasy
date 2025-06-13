@@ -1,0 +1,42 @@
+---
+title: "Integration of RNAseq Analysis tools with RNAseqEasy"
+author: Salvador Torres Montilla
+date: "Last edited `r format(Sys.time(), '%d %B, %Y')`"
+abstract: >
+  RNAseq analysis has become a common practice in most molecular biology
+  laboratories in the world. Several tools have been developed to achieve 
+  differential expression analysis, functional enrichment, gene co-expression 
+  or data visualization among others, from RNAseq data. However, many of them
+  require independent analysis and, in many ocasions, relatively high
+  programming skills. The package RNAseqEasy provides an integration of some of
+  this tools into a single user-friendly workflow, and tries to simplify it to 
+  require only basic notions in R programming. It is mainly based on DESeq2 
+  [@DESeq2], topGO [@topGO] and WGCNA [@WGCNA] packages to carry out PCA
+  exploratory plots, differential expression analysis, gene ontology enrichment 
+  analysis and gene-coexpression from Salmon [@patro2017] quantified data. This 
+  vignette explains the use of the package and demonstrates typical workflows.
+  
+  
+  RNAseqEasy package version: `r packageVersion("RNAseqEasy")`
+output: 
+  rmarkdown::html_document:
+    highlight: pygments
+    toc: true
+    fig_width: 5
+vignette: >
+  %\VignetteIndexEntry{Integration of RNAseq Analysis tools with RNAseqEasy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+bibliography: references.bib
+csl: nature.csl
+---
+
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy = FALSE,
+                      cache = FALSE,
+                      dev = "png",
+                      message = FALSE, error = FALSE, warning = TRUE)
+temp_output_dir <- tempdir()
+library(RNAseqEasy)
+```
