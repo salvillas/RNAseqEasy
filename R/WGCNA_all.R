@@ -250,6 +250,9 @@ normalize_df <- function(df) {
 #' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
+#' @param Annotation Two column data frame. First column must include Gene IDs.
+#' Second column must include functional annotation.
+#' @param Ontologies Character vector of GO terms to search for.
 #'
 #' @return A named list with GO enrichment results per module.
 #' @export
@@ -258,7 +261,8 @@ run_topGO_for_modules <- function(geneID2GO, Name,
                                   algorithm = "weight01",
                                   statistic = "fisher",
                                   plot_similarity = TRUE, Number_GOs = 20,
-                                  orgdb = "org.At.tair.db", semdata = NULL) {
+                                  orgdb = "org.At.tair.db", semdata = NULL,
+                                  Annotation, Ontologies = NULL) {
   geneInfo <- read.csv(file.path(input_path, paste(Name, "geneInfo.csv", sep = "_")))
   results_list <- list()
 
@@ -268,7 +272,7 @@ run_topGO_for_modules <- function(geneID2GO, Name,
                               output_dir = output_path_topGO, ontology = ontology,
                               algorithm = algorithm, statistic = statistic,
                               plot_similarity = plot_similarity, Number_GOs = Number_GOs,
-                              orgdb = orgdb, semdata = semdata)
+                              orgdb = orgdb, semdata = semdata, Ontologies = Ontologies, Annotation = Annotation)
     results_list[[color]] <- topGO_module
   }
   return(results_list)
@@ -299,6 +303,9 @@ run_topGO_for_modules <- function(geneID2GO, Name,
 #' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
+#' @param Annotation Two column data frame. First column must include Gene IDs.
+#' Second column must include functional annotation.
+#' @param Ontologies Character vector of GO terms to search for.
 #'
 #' @return A list with WGCNA results and plots.
 #' @export
@@ -306,7 +313,8 @@ WGCNA_Modules <- function(output_path, sampleDir, sample_table, Include = NULL, 
                           tx2gene, Filter = NULL, Power, Name, Colors_plot = NULL, NumberCol = 1,
                           geneID2GO, ontology = "BP", algorithm = "weight01", statistic = "fisher",
                           plot_similarity = TRUE, Number_GOs = 20,
-                          orgdb = "org.At.tair.db", semdata = NULL) {
+                          orgdb = "org.At.tair.db", semdata = NULL,
+                          Annotation, Ontologies = NULL) {
   # Subset samples
   sample_table_some <- get_sample_subset(sample_table, Include = Include,
                                          Exclude = Exclude)
@@ -375,7 +383,7 @@ WGCNA_Modules <- function(output_path, sampleDir, sample_table, Include = NULL, 
   topGO_path <- file.path(output_path, "topGO")
   topGO_results <- run_topGO_for_modules(geneID2GO = geneID2GO, Name = Name, input_path = output_path, output_path_topGO = topGO_path, ontology = ontology,
                                          algorithm = algorithm, statistic = statistic, plot_similarity = plot_similarity,
-                                         Number_GOs = Number_GOs,orgdb = orgdb, semdata = semdata)
+                                         Number_GOs = Number_GOs,orgdb = orgdb, semdata = semdata, Ontologies = Ontologies, Annotation = Annotation)
 
   return(topGO_results)
 }
