@@ -35,6 +35,12 @@ library(dplyr)
 #
 # use_data(Mpo_GO_GOSLIM, overwrite = TRUE)
 
+# Annotation_v6.1 <- read.delim("/Users/salva/Google Drive/My Drive/Antiguo Drive/CNB/Marchantia/v6.1r1/MpTak_v6.1_func_annotation_1line.tsv", header=FALSE) %>%
+#   mutate(Gene = stringr::str_sub(V1, 1, -3))
+# Annotation_v6.1_Genes <- Annotation_v6.1[!duplicated(Annotation_v6.1$Gene),] %>% dplyr::select(Gene, V2)
+# colnames(Annotation_v6.1_Genes) <- c("Gene", "Description")
+# use_data(Annotation_v6.1_Genes, overwrite = TRUE)
+
 # DEG_example_list <- read.delim("G:/Mi unidad/Antiguo Drive/CNB/Ayuda Wendy/RNAseq/DESeq2/1. gh3aMock_vs_Tak1Mock/gh3aMock_vs_Tak1Mock_Sig.txt",
 #                                header = TRUE)
 # use_data(DEG_example_list, overwrite = TRUE)
