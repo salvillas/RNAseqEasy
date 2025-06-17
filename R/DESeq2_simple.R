@@ -83,9 +83,10 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
+#' @param save_GeneNames Logical, whether to save genes represented by GO terms of interest.
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
-#' @param Ontologies Character vector of GO terms to search for.
+#' @param Ontologies Character vector of GO terms of interest to search for.
 #'
 #' @return No return value. Results are saved to disk.
 #' @export
@@ -97,7 +98,7 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
                           geneID2GO, algorithm = "weight01",
                           statistic = "fisher", Number_GOs = 20,
                           orgdb = "org.At.tair.db", semdata = NULL,
-                          Annotation, Ontologies = NULL) {
+                          save_GeneNames = FALSE, Annotation, Ontologies = NULL) {
 
   sample_table_some <- get_sample_subset(sample_table, Include = Include,
                                          Exclude = Exclude)
@@ -198,21 +199,21 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
     topGO_All(up_down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_All"),
               output_dir = topGO_path, ontology = ontology,
               plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-              Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, Ontologies = Ontologies, Annotation = Annotation)
+              Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
   }
 
   if (length(up_genes) > 1) {
     topGO_Up <- topGO_All(up_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Up"),
                           output_dir = topGO_path, ontology = ontology,
                           plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-                          Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, Ontologies = Ontologies, Annotation = Annotation)
+                          Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
   }
 
   if (length(down_genes) > 1) {
     topGO_Down <- topGO_All(down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Down"),
                             output_dir = topGO_path, ontology = ontology,
                             plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-                            Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, Ontologies = Ontologies, Annotation = Annotation)
+                            Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
   }
 
   Output <- list(Up = topGO_Up,
