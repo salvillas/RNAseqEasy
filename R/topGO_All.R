@@ -418,9 +418,10 @@ GeneNames_GOs <- function(Annotation, geneID2GO, output_dir, DEG, Ontologies = N
 #' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
+#' @param save_GeneNames Logical, whether to save genes represented by GO terms of interest.
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
-#' @param Ontologies Character vector of GO terms to search for.
+#' @param Ontologies Character vector of GO terms of interest to search for.
 #'
 #' @return A list with all intermediate and final results.
 #' @export
@@ -430,7 +431,7 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
                       statistic = "fisher",
                       plot_similarity = TRUE, Number_GOs = 20,
                       orgdb = "org.At.tair.db", semdata = NULL,
-                      Annotation, Ontologies = NULL) {
+                      save_GeneNames = FALSE, Annotation, Ontologies = NULL) {
 
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
   output_prefix <- file.path(output_dir, paste0("topGO_", name))
@@ -459,26 +460,29 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
   bubble_plot <- plot_topGO_results(go_results, title = name,
                                     output_path = paste0(output_prefix, "_bubble.pdf"))
 
+  output_list <- list(
+    GOdata = go_analysis$GOdata,
+    result = go_analysis$result,
+    results_table = go_results,
+    bubble_plot = bubble_plot
+    )
+
   # 6. Semantic plots (scatterplot and treemap)
-  similarity_results <- NULL
   if (plot_similarity) {
     similarity_results <- analyze_GO_similarity(go_results, orgdb = orgdb,
                                                 ontology = ontology,
                                                 semdata = semdata, Number_GOs = Number_GOs,
                                                 output_prefix = output_prefix)
+    output_list$similarity_results <- similarity_results
   }
 
-  GeneNames <- GeneNames_GOs(Annotation = Annotation, geneID2GO = geneID2GO,
-                             output_dir = output_dir, DEG = DEG,
-                             Ontologies = Ontologies, name = name)
+  if (save_GeneNames){
+    GeneNames <- GeneNames_GOs(Annotation = Annotation, geneID2GO = geneID2GO,
+                               output_dir = output_dir, DEG = DEG,
+                               Ontologies = Ontologies, name = name)
+    output_list$GeneNames <- GeneNames
+  }
 
-  return(list(
-    GOdata = go_analysis$GOdata,
-    result = go_analysis$result,
-    results_table = go_results,
-    bubble_plot = bubble_plot,
-    similarity = similarity_results,
-    GeneNames = GeneNames
-  ))
+  return(output_list)
 }
 
