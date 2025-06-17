@@ -350,7 +350,7 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
 #'
 #' @return No return value. An Excel file is written to disk.
 #' @export
-GeneNames_GOs <- function(Annotation, geneID2GO, output_dir, DEGs, Ontologies = NULL, name) {
+GeneNames_GOs <- function(Annotation, geneID2GO, output_dir, DEG, Ontologies = NULL, name) {
   if (is.vector(DEG)) {
     genes <- DEG
   } else if (is.data.frame(DEG)) {
@@ -388,7 +388,7 @@ GeneNames_GOs <- function(Annotation, geneID2GO, output_dir, DEGs, Ontologies = 
   for (GO in names(List_GOs_Genes)) {
     gene_df <- data.frame(Gene = List_GOs_Genes[[GO]]) %>%
       dplyr::left_join(Annotation)
-    Term <- stringr::str_sub(GO.db::Term(GO), 1, 31)
+    Term <- stringr::str_sub(AnnotationDbi::Term(GO), 1, 31)
     Final_Report[[Term]] <- gene_df
   }
 
