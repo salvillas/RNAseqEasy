@@ -333,13 +333,81 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
 }
 
 
+#' GeneNames_GOs: Generate Excel report of genes associated with GO terms
+#'
+#' This function generates an Excel report of genes associated with specified GO terms.
+#' It reads a functional annotation file, filters genes based on the provided DEGs and GO terms,
+#' and saves the results in an Excel file.
+#'
+#' @param Annotation Two column data frame. First column must include Gene IDs.
+#' Second column must include functional annotation.
+#' @param geneID2GO Named list mapping gene IDs to GO terms.
+#' @param output_dir Directory where the output file will be saved.
+#' @param DEG Vector or Data frame. If vector, it must include Gene IDs of interest.
+#' If Data frame, it must be the output of differential expressed genes (row names should be Gene IDs).
+#' @param Ontologies Character vector of GO terms to search for.
+#' @param name Base name for the output file.
+#'
+#' @return No return value. An Excel file is written to disk.
+#' @export
+GeneNames_GOs <- function(Annotation, geneID2GO, output_dir, DEGs, Ontologies = NULL, name) {
+  if (is.vector(DEG)) {
+    genes <- DEG
+  } else if (is.data.frame(DEG)) {
+    genes <- rownames(DEG)
+  } else {
+    stop("You should provide a vector or a data frame as `DEG` argument.")
+  }
+
+  geneID2GO_stack <- stack(geneID2GO)
+  if (!any(genes %in% geneID2GO_stack$ind)) {
+    warning("Gene IDs do not match with the annotation geneID2GO. The output will be empty.")
+  }
+
+  geneID2GO_stack_filtered <- geneID2GO_stack[geneID2GO_stack$ind %in% genes,]
+
+  if (!is.null(Ontologies)) {
+    if (any(Ontologies %in% geneID2GO_stack_filtered$values)) {
+      geneID2GO_stack_filtered <- geneID2GO_stack_filtered[geneID2GO_stack_filtered$values %in% Ontologies,]
+    } else {
+      stop("Any of your GO terms of interest is representing Gene IDs of this analysis.")
+    }
+  }
+  List_GOs_Genes <- split(geneID2GO_stack_filtered$ind, geneID2GO_stack_filtered$values)
+
+  if (ncol(Annotation) < 2) {
+    stop("`Annotation` must have at least two columns: Gene ID and Description.")
+  }
+
+  if (!any(genes %in% Annotation[,1])) {
+    warning("Gene IDs do not match with the `Annotation` argument. No description will be added.")
+  }
+
+  # Create final report
+  Final_Report <- list()
+  for (GO in names(List_GOs_Genes)) {
+    gene_df <- data.frame(Gene = List_GOs_Genes[[GO]]) %>%
+      dplyr::left_join(Annotation)
+    Term <- stringr::str_sub(GO.db::Term(GO), 1, 31)
+    Final_Report[[Term]] <- gene_df
+  }
+
+  # Write to Excel
+  openxlsx::write.xlsx(Final_Report,
+                       file = file.path(output_dir, paste0(name, "_Ontologies_Genes.xlsx")))
+  message("Excel file saved to: ", file.path(output_dir, paste0(name, "_Ontologies_Genes.xlsx")))
+  return(Final_Report)
+}
+
+
+
 
 #' Run full GO enrichment analysis with topGO
 #'
 #' This function performs the full GO enrichment workflow: gene preparation, enrichment test,
 #' result processing, visualization, and optional ancestor/similarity analysis.
 #'
-#' @param DEG Vector or data.frame of differentially expressed genes.
+#' @param DEG Vector or data.frame of differential expressed genes.
 #' @param geneID2GO Named list mapping gene IDs to GO terms.
 #' @param name Identifier for output files. If genes comes from a biological comparison, it is recommended to use that name
 #' @param output_dir Directory to save results (default: current working directory).
@@ -350,6 +418,9 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
 #' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
+#' @param Annotation Two column data frame. First column must include Gene IDs.
+#' Second column must include functional annotation.
+#' @param Ontologies Character vector of GO terms to search for.
 #'
 #' @return A list with all intermediate and final results.
 #' @export
@@ -358,7 +429,8 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
                       algorithm = "weight01",
                       statistic = "fisher",
                       plot_similarity = TRUE, Number_GOs = 20,
-                      orgdb = "org.At.tair.db", semdata = NULL) {
+                      orgdb = "org.At.tair.db", semdata = NULL,
+                      Annotation, Ontologies = NULL) {
 
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
   output_prefix <- file.path(output_dir, paste0("topGO_", name))
@@ -396,12 +468,17 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
                                                 output_prefix = output_prefix)
   }
 
+  GeneNames <- GeneNames_GOs(Annotation = Annotation, geneID2GO = geneID2GO,
+                             output_dir = output_dir, DEG = DEG,
+                             Ontologies = Ontologies, name = name)
+
   return(list(
     GOdata = go_analysis$GOdata,
     result = go_analysis$result,
     results_table = go_results,
     bubble_plot = bubble_plot,
-    similarity = similarity_results
+    similarity = similarity_results,
+    GeneNames = GeneNames
   ))
 }
 
