@@ -50,3 +50,17 @@ test_that("topGO_All runs end-to-end", {
   expect_true(is.list(result))
   expect_true("results_table" %in% names(result))
 })
+
+test_that("topGO_All runs end-to-end and saves GO terms of interest", {
+  data("DEG_example_list")
+  data("Mpo_GO_GOSLIM")
+  data("Annotation_v6.1_Genes")
+  geneID2GO <- load_topGO_db(Mpo_GO_GOSLIM, "Transcript", "GO")
+  geneUniverse <- unique(Mpo_GO_GOSLIM$Transcript)
+  gene_factor <- prepare_topGO_genes(DEG_example_list, geneUniverse)
+  GOterms_of_interest <- c("GO:0009617", "GO:0042742", "GO:0002215")
+  result <- topGO_All(DEG_example_list, geneID2GO, name = "test", output_dir = tempdir(), plot_similarity = FALSE,
+                      save_GeneNames = TRUE, Annotation = Annotation_v6.1_Genes, Ontologies = GOterms_of_interest)
+  expect_true(is.list(result))
+  expect_true("results_table" %in% names(result))
+})
