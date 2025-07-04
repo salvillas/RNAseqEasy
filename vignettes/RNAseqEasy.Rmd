@@ -40,3 +40,35 @@ knitr::opts_chunk$set(tidy = FALSE,
 temp_output_dir <- tempdir()
 library(RNAseqEasy)
 ```
+
+## Input data
+
+The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path of the directory where `quant.sf` samples are saved will be the input, and the different functions included in this package will retrieve the data from it. The other input necessary for the analysis is a data frame that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
+
+### Salmon data
+
+Salmon [@patro2017] is a widely used software for quantifying transcript abundance. A well detailed tutorial can be found in their [official webpage](https://combine-lab.github.io/salmon/getting_started/). It is a very fast tool for transcript quantification directly from `fastq.gz`files. The only requirement is the creation of an index of the **transcriptome** of the organism we are working with (do not use the genome!!!), also explained in their tutorial.
+
+As a result, we will obtain a folder [1] containing one folder per analyzed sample with its names. In each folder, the main output fail will be named `quant.sf`, which contains the name of each transcript and their abundance in Transcripts Per Million (TPM), among other information (length, effective length and number of reads). The path to this output folder [1] will be input for our analysis.
+
+
+
+```{r zenodo}
+# URL from Zenodo
+data_url <- "https://zenodo.org/records/15800134/files/GSE275561.zip?download=1"
+
+# Temporal directory to download data
+output_dir <- file.path(tempdir(), "GSE275561")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+zip_file <- file.path(tempdir(), "GSE275561.zip")
+
+# Download zip file with Salmon quantified data from Zenodo
+download.file(url = data_url, destfile = zip_file, mode = "wb")
+
+# Unzip compressed file
+unzip(zip_file, exdir = output_dir)
+
+list.files(output_dir)
+```
+
