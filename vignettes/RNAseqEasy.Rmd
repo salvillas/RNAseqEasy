@@ -43,15 +43,13 @@ library(RNAseqEasy)
 
 ## Input data
 
-The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path of the directory where `quant.sf` samples are saved will be the input, and the different functions included in this package will retrieve the data from it. The other input necessary for the analysis is a data frame that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
+The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path [1] of the directory where `quant.sf` samples are saved will be the input, and the different functions included in this package will retrieve the data from it. The other input necessary for the analysis is a data frame [2] that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
 
 ### Salmon data
 
 Salmon [@patro2017] is a widely used software for quantifying transcript abundance. A well detailed tutorial can be found in their [official webpage](https://combine-lab.github.io/salmon/getting_started/). It is a very fast tool for transcript quantification directly from `fastq.gz`files. The only requirement is the creation of an index of the **transcriptome** of the organism we are working with (do not use the genome!!!), also explained in their tutorial.
 
-As a result, we will obtain a folder [1] containing one folder per analyzed sample with its names. In each folder, the main output fail will be named `quant.sf`, which contains the name of each transcript and their abundance in Transcripts Per Million (TPM), among other information (length, effective length and number of reads). The path to this output folder [1] will be input for our analysis.
-
-
+As a result, we will obtain a folder [1] containing one folder per analyzed sample with its names. In each folder, the main output fail will be named `quant.sf`, which contains the name of each transcript and their abundance in Transcripts Per Million (TPM), among other information (length, effective length and number of reads). The path to this output folder will be input for our analysis [1].
 
 ```{r zenodo}
 # URL from Zenodo
@@ -70,5 +68,56 @@ download.file(url = data_url, destfile = zip_file, mode = "wb")
 unzip(zip_file, exdir = output_dir)
 
 list.files(output_dir)
+```
+
+### Sample table
+
+For each experiment anaylis, it is required to generate a data frame [2] (we call it `sample_table`) which correlates the name of each sequenced sample with the variables describing it in the experiment. So, it will include a `Sample` column including sample names, and an extra column for each variable of factor that were included in the experiment design. In our example, we include 12 different samples (Wendy1 to Wendy12), and there were 3 different variables describing them:
+
+-   `Genotype`: Samples were divided in two different genotypes: 'Tak1' (wild-type organisms) and 'gh3a' (CRISPR-Cas9 mutants). 
+-   `Treatment`: Two different treatments were applied to samples: 'Mock' or 'OPDA' (exposure to a high concentration of a plant stress hormone from jasmonic acid family).
+-   `Replicate`: Each category of samples included 3 independent biological replicates. 
+
+
+```{r sample_data}
+# Data frame with 'Sample', 'Genotype', 'Treatment and 'Replicate' information
+
+sample_table <- data.frame(
+  Sample = paste0("Wendy", seq(1,12)),
+  Genotype = rep(c("Tak1", "gh3a"), each = 6),
+  Treatment = rep(c("Mock", "OPDA"), each = 3),
+  Replicate = seq(1,3)
+)
+
+# Set 'Treatment' as a factor, setting "Mock" as reference
+sample_table$Treatment <- factor(sample_table$Treatment, levels = c("Mock", "OPDA"))
+
+sample_table
+```
+
+### Functional annotation
+
+Everything else required for the analysis is not specific of the experiment you are performing, but depends on the organism you are working with. There are two different files that we will need to import for the analysis:
+
+- A data frame that correlates each transcipt name with its corresponding gene name. 
+- A file including functional annotation, i.e., correlating each gene/transcript to GO terms.
+
+```{r mRNA_fasta, warning=FALSE}
+library(phylotools)
+library(dplyr)
+URL <- gzcon(url(paste("https://marchantia.info/download/MpTak_v6.1/", "MpTak_v6.1r1.mrna.fasta.gz", sep="")))
+txt <- readLines(URL)
+Marchantia7_Transcripts <- get.fasta.name(textConnection(txt), clean_name = FALSE)
+head(Marchantia7_Transcripts)
+
+Marchantia7_tx2gene <- data.frame(Name = Marchantia7_Transcripts) %>%
+  tidyr::separate(Name, sep = " ", into = c("TXNAME", "CDS")) %>%
+  dplyr::mutate(GENEID = stringr::str_sub(TXNAME, 1, -3)) %>%
+  dplyr::select(-CDS)
+
+head(Marchantia7_tx2gene, 10)
+```
+```{r FunctionalDB}
+
 ```
 
