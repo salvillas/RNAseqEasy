@@ -1,0 +1,189 @@
+---
+title: "Integration of RNAseq Analysis tools with RNAseqEasy"
+author: Salvador Torres Montilla
+date: "Last edited `r format(Sys.time(), '%d %B, %Y')`"
+abstract: >
+  RNAseq analysis has become a common practice in most molecular biology
+  laboratories in the world. Several tools have been developed to achieve 
+  differential expression analysis, functional enrichment, gene co-expression 
+  or data visualization among others, from RNAseq data. However, many of them
+  require independent analysis and, in many ocasions, relatively high
+  programming skills. The package RNAseqEasy provides an integration of some of
+  this tools into a single user-friendly workflow, and tries to simplify it to 
+  require only basic notions in R programming. It is mainly based on DESeq2 
+  [@DESeq2], topGO [@topGO] and WGCNA [@WGCNA] packages to carry out PCA
+  exploratory plots, differential expression analysis, gene ontology enrichment 
+  analysis and gene-coexpression from Salmon [@patro2017] quantified data. This 
+  vignette explains the use of the package and demonstrates typical workflows.
+  
+  
+  RNAseqEasy package version: `r packageVersion("RNAseqEasy")`
+output: 
+  rmarkdown::html_document:
+    highlight: pygments
+    toc: true
+    fig_width: 5
+vignette: >
+  %\VignetteIndexEntry{Integration of RNAseq Analysis tools with RNAseqEasy}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+bibliography: references.bib
+csl: nature.csl
+---
+
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy = FALSE,
+                      cache = FALSE,
+                      dev = "png",
+                      message = FALSE, error = FALSE, warning = TRUE)
+temp_output_dir <- tempdir()
+library(RNAseqEasy)
+```
+
+## Input data
+
+The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path [1] of the directory where `quant.sf` samples are saved will be the input, and the different functions included in this package will retrieve the data from it. The other input necessary for the analysis is a data frame [2] that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
+
+### Salmon data
+
+Salmon [@patro2017] is a widely used software for quantifying transcript abundance. A well detailed tutorial can be found in their [official webpage](https://combine-lab.github.io/salmon/getting_started/). It is a very fast tool for transcript quantification directly from `fastq.gz`files. The only requirement is the creation of an index of the **transcriptome** of the organism we are working with (do not use the genome!!!), also explained in their tutorial.
+
+As a result, we will obtain a folder [1] containing one folder per analyzed sample with its names. In each folder, the main output fail will be named `quant.sf`, which contains the name of each transcript and their abundance in Transcripts Per Million (TPM), among other information (length, effective length and number of reads). The path to this output folder will be input for our analysis [1].
+
+```{r zenodo}
+# URL from Zenodo
+data_url <- "https://zenodo.org/records/15800134/files/GSE275561.zip?download=1"
+
+# Temporal directory to download data
+output_dir <- file.path(tempdir(), "GSE275561")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+zip_file <- file.path(tempdir(), "GSE275561.zip")
+
+# Download zip file with Salmon quantified data from Zenodo
+download.file(url = data_url, destfile = zip_file, mode = "wb")
+
+# Unzip compressed file
+unzip(zip_file, exdir = output_dir)
+
+list.files(output_dir)
+```
+
+### Sample table
+
+For each experiment anaylis, it is required to generate a data frame [2] (we call it `sample_table`) which correlates the name of each sequenced sample with the variables describing it in the experiment. So, it will include a `Sample` column including sample names, and an extra column for each variable of factor that were included in the experiment design. In our example, we include 12 different samples (Wendy1 to Wendy12), and there were 3 different variables describing them:
+
+-   `Genotype`: Samples were divided in two different genotypes: 'Tak1' (wild-type organisms) and 'gh3a' (CRISPR-Cas9 mutants). 
+-   `Treatment`: Two different treatments were applied to samples: 'Mock' or 'OPDA' (exposure to a high concentration of a plant stress hormone from jasmonic acid family).
+-   `Replicate`: Each category of samples included 3 independent biological replicates. 
+
+
+```{r sample_data}
+# Data frame with 'Sample', 'Genotype', 'Treatment and 'Replicate' information
+
+sample_table <- data.frame(
+  Sample = paste0("Wendy", seq(1,12)),
+  Genotype = rep(c("Tak1", "gh3a"), each = 6),
+  Treatment = rep(c("Mock", "OPDA"), each = 3),
+  Replicate = seq(1,3)
+)
+
+# Set 'Treatment' as a factor, setting "Mock" as reference
+sample_table$Treatment <- factor(sample_table$Treatment, levels = c("Mock", "OPDA"))
+
+sample_table
+```
+
+### Functional annotation
+
+Everything else required for the analysis is not specific of the experiment you are performing, but depends on the organism you are working with. There are two different files that we will need to import for the analysis:
+
+- A data frame that correlates each transcipt name with its corresponding gene name. 
+- A file including functional annotation, i.e., correlating each gene/transcript to GO terms.
+
+```{r mRNA_fasta, warning=FALSE}
+library(phylotools)
+library(dplyr)
+URL <- gzcon(url(paste("https://marchantia.info/download/MpTak_v6.1/", "MpTak_v6.1r1.mrna.fasta.gz", sep="")))
+txt <- readLines(URL)
+Marchantia7_Transcripts <- get.fasta.name(textConnection(txt), clean_name = FALSE)
+head(Marchantia7_Transcripts)
+
+Marchantia7_tx2gene <- data.frame(Name = Marchantia7_Transcripts) %>%
+  tidyr::separate(Name, sep = " ", into = c("TXNAME", "CDS")) %>%
+  dplyr::mutate(GENEID = stringr::str_sub(TXNAME, 1, -3)) %>%
+  dplyr::select(-CDS)
+
+head(Marchantia7_tx2gene, 10)
+```
+```{r FunctionalDB}
+library(RNAseqEasy)
+GO_data <- system.file("extdata",
+                      "Mpo6.1_GO_db_GeneGO.csv",
+                      package="RNAseqEasy", mustWork=TRUE)
+Mpo_GO_GOSLIM <- read.csv(GO_data, sep = "\t")
+head(Mpo_GO_GOSLIM)
+```
+
+```{r loadGO}
+geneID2GO <- load_topGO_db(Mpo_GO_GOSLIM, "Transcript", "GO")
+head(geneID2GO)
+```
+
+```{r At_tair}
+save <- GOSemSim::godata("org.At.tair.db", ont="BP")
+```
+
+```{r SelectContrast}
+library(RNAseqEasy)
+library(DESeq2)
+dir.create(output_dir, "test")
+test_dir <- file.path(output_dir, "test")
+sampleDir <- file.path(output_dir, "02_Salmon")
+DESeq2_simple(
+    output_path = test_dir,
+    sampleDir = sampleDir,
+    sample_table = sample_table,
+    Include = NULL,
+    Exclude = NULL,
+    tx2gene = Marchantia7_tx2gene,
+    Variable = c("Genotype", "Treatment"),
+    Design = "Genotype + Treatment + Genotype:Treatment",
+    Group = "NO",
+    Name = "test_DESeq2",
+    Reduced = FALSE,
+    log2FCtopGO = 1,
+    geneID2GO = geneID2GO,
+    ontology = "BP",
+    plot_similarity = TRUE,
+    orgdb = "org.At.tair.db",
+    semdata = save
+  )
+```
+
+```{r DESeq2_simple}
+library(RNAseqEasy)
+library(DESeq2)
+library(topGO)
+result <- DESeq2_simple(
+    output_path = getwd(),
+    sampleDir = sampleDir,
+    sample_table = sample_table,
+    Include = NULL,
+    Exclude = NULL,
+    tx2gene = Marchantia7_tx2gene,
+    Variable = c("Genotype", "Treatment"),
+    Design = "Genotype + Treatment + Genotype:Treatment",
+    Group = "NO",
+    Name = "test_DESeq2",
+    Contrast = list(c("Treatment_OPDA_vs_Mock")),
+    Reduced = FALSE,
+    log2FCtopGO = 1,
+    geneID2GO = geneID2GO,
+    ontology = "BP",
+    plot_similarity = TRUE,
+    orgdb = "org.At.tair.db",
+    semdata = save
+  )
+```
