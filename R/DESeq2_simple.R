@@ -100,8 +100,8 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
                           orgdb = "org.At.tair.db", semdata = NULL,
                           save_GeneNames = FALSE, Annotation, Ontologies = NULL) {
 
-  sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table_some)
-  sample_table_some <- get_sample_subset(sample_table, Include = Include,
+  sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table)
+  sample_table_some <- get_sample_subset(sample_table_some, Include = Include,
                                          Exclude = Exclude)
   txi <- load_tximport_data(sampleDir, sample_table_some, tx2gene)
 
