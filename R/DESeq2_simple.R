@@ -91,7 +91,7 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @return No return value. Results are saved to disk.
 #' @export
 DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, Exclude = NULL,
-                          tx2gene, min_count = 10, min_samples = 3,
+                          tx2gene, min_count = 10, min_samples = 3, PCA = TRUE,
                           Variable, Design, Group = "NO", Name, Contrast,
                           Reduced = FALSE, Reduced_design = NULL,
                           log2FCtopGO = 1, ontology = "BP", plot_similarity = TRUE,
@@ -126,6 +126,13 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
     dds$group <- factor(paste0(sample_table_some[,First], sample_table_some[,Second]), levels = Levels)
     design(dds) <- ~group
     dds <- DESeq(dds)
+  }
+
+  if (PCA){
+    run_pca_analysis(dds = dds, variables = Variable, colors, components = c(1, 2),
+                     name = paste("PCA", Name, sep = "_"),
+                     output_dir = output_path, ntop = 500,
+                     width = 10, height = 8, units = "in")
   }
 
   # get the model matrix
