@@ -243,14 +243,6 @@ normalize_df <- function(df) {
 #' @param Name Character. Base name for '"Name"_geneInfo.csv' previously created with WGCNA.
 #' @param input_path Directory where '"Name"_geneInfo.csv' file was saved.
 #' @param output_path_topGO Directory where results will be saved.
-#' @param ontology GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".
-#' @param algorithm Algorithm for topGO test (default: "weight01").
-#' @param statistic Statistical test to use (default: "fisher").
-#' @param plot_similarity Logical, whether to analyze and visualize GO term similarity.
-#' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
-#' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
-#' @param semdata Optional precomputed semantic data.
-#' @param save_GeneNames Logical, whether to save genes represented by GO terms of interest.
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
 #' @param Ontologies Character vector of GO terms of interest to search for.
@@ -258,22 +250,14 @@ normalize_df <- function(df) {
 #' @return A named list with GO enrichment results per module.
 #' @export
 run_topGO_for_modules <- function(geneID2GO, Name,
-                                  input_path, output_path_topGO, ontology = "BP",
-                                  algorithm = "weight01",
-                                  statistic = "fisher",
-                                  plot_similarity = TRUE, Number_GOs = 20,
-                                  orgdb = "org.At.tair.db", semdata = NULL,
-                                  save_GeneNames = FALSE, Annotation, Ontologies = NULL) {
+                                  input_path, output_path_topGO, Annotation, ...) {
   geneInfo <- read.csv(file.path(input_path, paste(Name, "geneInfo.csv", sep = "_")))
   results_list <- list()
 
   for (color in unique(geneInfo$moduleColor)) {
     genes <- geneInfo$Genes[geneInfo$moduleColor == color]
     topGO_module <- topGO_All(DEG = genes, geneID2GO = geneID2GO, name = color,
-                              output_dir = output_path_topGO, ontology = ontology,
-                              algorithm = algorithm, statistic = statistic,
-                              plot_similarity = plot_similarity, Number_GOs = Number_GOs,
-                              orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
+                              output_dir = output_path_topGO, Annotation = Annotation, ...)
     results_list[[color]] <- topGO_module
   }
   return(results_list)
@@ -297,26 +281,14 @@ run_topGO_for_modules <- function(geneID2GO, Name,
 #' @param Colors_plot Named vector of colors for groups.
 #' @param NumberCol Integer. Number of columns for facet_wrap in ggplot.
 #' @param geneID2GO Named list mapping gene IDs to GO terms.
-#' @param ontology GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".
-#' @param algorithm Algorithm for topGO test (default: "weight01").
-#' @param statistic Statistical test to use (default: "fisher").
-#' @param plot_similarity Logical, whether to analyze and visualize GO term similarity.
-#' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
-#' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
-#' @param semdata Optional precomputed semantic data.
-#' @param save_GeneNames Logical, whether to save genes represented by GO terms of interest.
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
-#' @param Ontologies Character vector of GO terms of interest to search for.
 #'
 #' @return A list with WGCNA results and plots.
 #' @export
 WGCNA_Modules <- function(output_path, sampleDir, sample_table, Include = NULL, Exclude = NULL, DEGs, Variables,
                           tx2gene, Filter = NULL, Power, Name, Colors_plot = NULL, NumberCol = 1,
-                          geneID2GO, ontology = "BP", algorithm = "weight01", statistic = "fisher",
-                          plot_similarity = TRUE, Number_GOs = 20,
-                          orgdb = "org.At.tair.db", semdata = NULL,
-                          save_GeneNames = save_GeneNames, Annotation, Ontologies = NULL) {
+                          geneID2GO, Annotation, ...) {
   # Subset samples
   sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table)
   sample_table_some <- get_sample_subset(sample_table_some, Include = Include,
@@ -383,9 +355,10 @@ WGCNA_Modules <- function(output_path, sampleDir, sample_table, Include = NULL, 
   }
 
   topGO_path <- file.path(output_path, "topGO")
-  topGO_results <- run_topGO_for_modules(geneID2GO = geneID2GO, Name = Name, input_path = output_path, output_path_topGO = topGO_path, ontology = ontology,
-                                         algorithm = algorithm, statistic = statistic, plot_similarity = plot_similarity,
-                                         Number_GOs = Number_GOs,orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
+  topGO_results <- run_topGO_for_modules(geneID2GO = geneID2GO, Name = Name,
+                                         input_path = output_path,
+                                         output_path_topGO = topGO_path,
+                                         Annotation = Annotation, ...)
 
   return(topGO_results)
 }
