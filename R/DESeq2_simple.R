@@ -129,8 +129,8 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
   }
 
   if (PCA){
-    Set2 <- palette.colors(length(unique(sample_table_some[[Variable[1]]])), "Set2")
-    colors <- setNames(Set2, unique(sample_table_some[[Variable[1]]]))
+    Set2 <- palette.colors(length(unique(sample_table_some[[Variable[2]]])), "Set2")
+    colors <- setNames(Set2, unique(sample_table_some[[Variable[2]]]))
     run_pca_analysis(dds = dds, variables = Variable, colors = colors, components = c(1, 2),
                      name = paste("PCA", Name, sep = "_"),
                      output_dir = output_path, ntop = 500,
@@ -197,10 +197,6 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
   up_genes <- rownames(subset(res, padj <= 0.05 & log2FoldChange >= log2FCtopGO))
   down_genes <- rownames(subset(res, padj <= 0.05 & log2FoldChange <= -log2FCtopGO))
   up_down_genes <- c(up_genes, down_genes)
-
-  if (!dir.exists("topGO")) {
-    dir.create("topGO", showWarnings = FALSE)
-  }
 
   topGO_path <- file.path(output_path, "topGO")
 
