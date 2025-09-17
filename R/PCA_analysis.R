@@ -48,8 +48,7 @@ plot_pca <- function(pca_result, variables, colors, components = c(1, 2), name =
   }
 
   if (missing(colors)) {
-    Set2 <- palette.colors(length(variables), "Set2")
-    colors <- setNames(Set2[seq_along(variables)], variables)
+    stop("No colors argument has been provided.")
   }
 
   intgroup.df <- as.data.frame(colData(vsd)[, variables, drop = FALSE])

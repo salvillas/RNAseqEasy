@@ -129,7 +129,9 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
   }
 
   if (PCA){
-    run_pca_analysis(dds = dds, variables = Variable, colors, components = c(1, 2),
+    Set2 <- palette.colors(length(unique(sample_table_some[[Variable[1]]])), "Set2")
+    colors <- setNames(Set2, unique(sample_table_some[[Variable[1]]]))
+    run_pca_analysis(dds = dds, variables = Variable, colors = colors, components = c(1, 2),
                      name = paste("PCA", Name, sep = "_"),
                      output_dir = output_path, ntop = 500,
                      width = 10, height = 8, units = "in")
