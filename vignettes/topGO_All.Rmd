@@ -1,0 +1,128 @@
+---
+title: "RNAseqEasy: GO Enrichment Analysis with topGO"
+author: Salvador Torres Montilla
+date: "Last edited `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  rmarkdown::html_document:
+    highlight: pygments
+    toc: true
+    fig_width: 5
+vignette: >
+  %\VignetteIndexEntry{RNAseqEasy: GO Enrichment Analysis with topGO}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  %\usepackage[utf8]{inputenc}
+bibliography: references.bib
+---
+
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy = FALSE,
+                      cache = FALSE,
+                      dev = "png",
+                      message = FALSE, error = FALSE, warning = TRUE)
+temp_output_dir <- tempdir()
+```
+
+## Introduction
+
+This vignette demonstrates how to use the `RNAseqEasy` package to perform GO enrichment analysis using the `topGO_All()` function. We will use a toy dataset to illustrate the workflow. The main goal is to identify GO terms representing a list of Genes (e.g., differential expressed genes) and representing the output in useful plots.
+
+The workflow if focused on the `topGO_All()` function, which integrates different steps: preparing the gene data, executing the enrichment analysis using `topGO` package, processing the results and visualizing the data.
+
+```{r load_packages, include=FALSE}
+library(RNAseqEasy)
+library(tximport)
+library(DESeq2)
+library(tidyverse)
+library(phylotools)
+library(pheatmap)
+library(topGO)
+library(WGCNA)
+library(Hmisc)
+library(openxlsx)
+library(wordcloud2)
+library(GO.db)
+library(htmlwidgets)
+library(rrvgo)
+library(pals)
+library(reshape2)
+library(ggsci)
+library(factoextra)
+```
+
+## Data preparation
+
+To perform GO enrichment analysis, we need two principal components:
+
+1.  **A list of genes of interest**: It may be a Gene IDs vector or a `data.frame` resulting from a differential gene enrichment analysis (which may include Gene IDs as rownames and, optionally, a `padj` column including significance data for filtering)-
+2.  **Functional annotation of GO terms (`geneID2GO`)**: A named list where each element corresponds to a gene and contains a vector with GOterms associated to this gene.
+
+`RNAseqEasy` package includes example data to illustrate this process:
+
+-   `DEG_example_list`: A `data.frame` resulting from `DESeq2` analysis, comparing *gh3a* mutant vs Tak-1 in Mock conditions in *Marchantia polymorpha* [@liang2024].
+-   `Mpo_GO_GOSLIM`: A `data.frame` containing GO annotations for *Marchantia polymorpha* transcripts. Relevant columns are "Transcript" (Gene IDs) and "GO" (associated GO term).
+
+We load this example data:
+
+```{r load_example_data}
+data("DEG_example_list", package = "RNAseqEasy")
+data("Mpo_GO_GOSLIM", package = "RNAseqEasy")
+
+head(DEG_example_list)
+head(Mpo_GO_GOSLIM)
+```
+
+The function *load_topGO_db* can be used to convert `Mpo_GO_GOSLIM` object into a `geneID2GO` list required for *topGO* analysis.
+
+```{r create_geneID2GO}
+library(RNAseqEasy)
+geneID2GO <- load_topGO_db(Mpo_GO_GOSLIM, GeneID =  "Transcript", GOterms = "GO")
+
+# We check geneID2GO structure (must be a named list)
+str(head(geneID2GO))
+```
+
+## GO Enrichment Analysis
+
+Having gene of interest object (`DEG_example_list`) and gene annotation list (`geneID2GO`), we can perform the full *topGO_All* function to execute *topGO* based enrichment analysis.
+
+This function performs the following steps:
+
+1.  *prepare_topGO_genes* function generates a gene factor of our genes of interest withing the gene universe.
+2.  *run_topGO_analysis* function executes the *topGO* enrichment test, focused on Biological Processes and using "*weight01*" algorithm and "*fisher*" statistic by default .
+3.  *process_topGO_results* function processes the results to obtain significant GO terms and calculate enrichment.
+4.  *plot_topGO_results* function generates a bubble plot with enriched GO terms ranked in descendant order according to their enrichment.
+5.  *analyze_GO_similarity* function performs a semantic similarity analysis and generates plots of clustered GO terms.
+6.  *save_topGO_results* saves enrichment results in the desired output path.
+
+As a result, *topGO_All* outputs are:
+
+-   A .txt table with enriched GO terms. It can contain all enrichment analysis data or just p-values (`simplify = TRUE`). This table includes:
+    -   `GO.ID`: GO term identifier.
+    -   `Term`: GO description.
+    -   `Annotated`: Number of genes annotated to this GO term in the gene universe used for the analysis.
+    -   `Significant`: Number of observed genes annotated to this GO term from our input gene list.
+    -   `Expected`: Number of genes expected to be found by chance in our input gene list.
+    -   `pval`: p-value of enrichment test.
+    -   `Enrichment`:Enrichment ratio ([Significant / Annotated] / [Number of genes in our input gene list / Number of genes in the gene universe]).
+-   PDF with bubble plot.
+-   PDF with scatter plot of clustered GO terms.
+-   PDF with a treemap plot of GO terms.
+
+By default, topGO_All uses *org.At.tair.db* for the similarity analysis. If you are working with another organism or you have an appropiate OrgDb, you can include it in the `orgdb` argument.
+
+```{r run_topGO_All}
+# install.packages("org.At.tair.db") # if necesary
+
+results_bp <- topGO_All(
+  DEG = DEG_example_list,
+  geneID2GO = geneID2GO,
+  name = "Mpo_BP_Enrichment",
+  output_dir = temp_output_dir,
+  ontology = "BP",
+  plot_similarity = TRUE,
+  orgdb = "org.At.tair.db"
+)
+```
+
+Output files will be saved in the specified `output_dir` with *topGO_Mpo_BP_Enrichment_* prefix.

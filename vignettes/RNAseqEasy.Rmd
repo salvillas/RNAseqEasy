@@ -135,7 +135,7 @@ head(geneID2GO)
 save <- GOSemSim::godata("org.At.tair.db", ont="BP")
 ```
 
-```{r SelectContrast}
+```{r SelectContrast, error = TRUE}
 library(RNAseqEasy)
 library(DESeq2)
 dir.create(output_dir, "test")
