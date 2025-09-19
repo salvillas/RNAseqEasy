@@ -78,7 +78,7 @@ plot_pca <- function(pca_result, variables, colors, components = c(1, 2), name =
     coord_fixed() +
     theme_light()
 
-  ggsave(file.path(output_dir, paste0("PCA_plot_", name, ".png")), p, width = width, height = height, units = units, limitsize = FALSE)
+  ggsave(file.path(output_dir, paste0(name, ".png")), p, width = width, height = height, units = units, limitsize = FALSE)
 
   return(p)
 }
