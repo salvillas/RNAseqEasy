@@ -43,7 +43,7 @@ library(RNAseqEasy)
 
 ## Input data
 
-The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path [1] of the directory where `quant.sf` samples are saved will be the input, and the different functions included in this package will retrieve the data from it. The other input necessary for the analysis is a data frame [2] that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
+The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path [1] of the directory where `quant.sf` samples are saved will be the input. The other input necessary for the analysis is a data frame [2] that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
 
 ### Salmon data
 
@@ -70,14 +70,19 @@ unzip(zip_file, exdir = output_dir)
 list.files(output_dir)
 ```
 
+So, we set the "02_Salmon" folder as `sampleDir`, which will direct the analysis to the directory to retrieve quantified data for each sample.
+
+```{r sampleDir}
+sampleDir <- file.path(output_dir, "02_Salmon")
+```
+
 ### Sample table
 
-For each experiment anaylis, it is required to generate a data frame [2] (we call it `sample_table`) which correlates the name of each sequenced sample with the variables describing it in the experiment. So, it will include a `Sample` column including sample names, and an extra column for each variable of factor that were included in the experiment design. In our example, we include 12 different samples (Wendy1 to Wendy12), and there were 3 different variables describing them:
+For each experiment analysis, it is required to generate a data frame [2] (we call it `sample_table`) which correlates the name of each sequenced sample with the variables describing it in the experiment. So, it will include a `Sample` column including sample names, and an extra column for each variable of factor that were included in the experiment design. In our example, we include 12 different samples (Wendy1 to Wendy12), and there were 3 different variables describing them:
 
--   `Genotype`: Samples were divided in two different genotypes: 'Tak1' (wild-type organisms) and 'gh3a' (CRISPR-Cas9 mutants). 
--   `Treatment`: Two different treatments were applied to samples: 'Mock' or 'OPDA' (exposure to a high concentration of a plant stress hormone from jasmonic acid family).
--   `Replicate`: Each category of samples included 3 independent biological replicates. 
-
+-   `Genotype`. Samples were divided in two different genotypes: 'Tak1' (wild-type organisms) and 'gh3a' (CRISPR-Cas9 mutants).
+-   `Treatment`. Two different treatments were applied to samples: 'Mock' or 'OPDA' (exposure to a high concentration of a plant stress hormone from jasmonic acid family).
+-   `Replicate`. Each category of samples included 3 independent biological replicates.
 
 ```{r sample_data}
 # Data frame with 'Sample', 'Genotype', 'Treatment and 'Replicate' information
@@ -89,22 +94,34 @@ sample_table <- data.frame(
   Replicate = seq(1,3)
 )
 
-# Set 'Treatment' as a factor, setting "Mock" as reference
+sample_table
+```
+
+In differential expression analysis, comparisons are performed against a reference level. By default, R set levels based on alphabetical order for each variable. We can set the specific comparison we want to perform in each analysis, but it is a good practice to set levels order as we want to before we continue. We transform each variable column into factor and establish the level order. In this example, "TaK-1" is the reference genotype, and "Mock" is the reference treatment.
+
+```{r factors}
+# Convert 'Genotype' into factor, setting "Tak1" as reference
+sample_table$Genotype <- factor(sample_table$Genotype,
+                                levels = c("Tak1", "gh3a"))
+
+# Convert 'Treatment' into factor, setting "Mock" as reference
 sample_table$Treatment <- factor(sample_table$Treatment, levels = c("Mock", "OPDA"))
 
-sample_table
+str(sample_table)
 ```
 
 ### Functional annotation
 
 Everything else required for the analysis is not specific of the experiment you are performing, but depends on the organism you are working with. There are two different files that we will need to import for the analysis:
 
-- A data frame that correlates each transcipt name with its corresponding gene name. 
-- A file including functional annotation, i.e., correlating each gene/transcript to GO terms.
+-   A data frame that correlates each transcript name with its corresponding gene name.
+-   A file including functional annotation, i.e., correlating each gene/transcript to GO terms.
+
+In this example, we are working with samples extracted from the liverwort *Marchantia polymorpha*, a model plant widely use to study how ancient or conserved biological processes are in plant evolution. To get the reference transcriptome, we download it from [marchantia.info](https://marchantia.info/), the Genome Database for *Marchantia polymorpha*. The `get.fasta.name()` function from phylotools [@revell2024] package allows us to obtain the transcript names from the fasta file. In *Marchantia*, gene names and transcript share the same nomenclature, only adding a dot and a number to the different transcripts of a gene. To correlate them, we create a data frame including a column called `Name` containing transcript names, and based on that we create a new column called `GENEID` removing last 2 characters (using `str_sub()` function from string package).
 
 ```{r mRNA_fasta, warning=FALSE}
 library(phylotools)
-library(dplyr)
+library(tidyverse)
 URL <- gzcon(url(paste("https://marchantia.info/download/MpTak_v6.1/", "MpTak_v6.1r1.mrna.fasta.gz", sep="")))
 txt <- readLines(URL)
 Marchantia7_Transcripts <- get.fasta.name(textConnection(txt), clean_name = FALSE)
@@ -117,8 +134,12 @@ Marchantia7_tx2gene <- data.frame(Name = Marchantia7_Transcripts) %>%
 
 head(Marchantia7_tx2gene, 10)
 ```
+
+For this example, functional annotation of Gene Ontologies (GOs) for *Marchantia* genes can be downloaded from the package in a csv file. Many organisms reference databases include this kind of files. If you cannot find them, there are tools and tutorial to annotate your reference genome.
+
 ```{r FunctionalDB}
 library(RNAseqEasy)
+
 GO_data <- system.file("extdata",
                       "Mpo6.1_GO_db_GeneGO.csv",
                       package="RNAseqEasy", mustWork=TRUE)
@@ -126,21 +147,27 @@ Mpo_GO_GOSLIM <- read.csv(GO_data, sep = "\t")
 head(Mpo_GO_GOSLIM)
 ```
 
+This annotation file is a two column data frame correlating transcript names and GO terms (one assotiation per row). For topGO GO enrichement analyses, we will need to convert it into a list containing transcript as keys and all their annotated GO terms as values. The `load_topGO_db()` function included in this package helps us in this purpose.
+
 ```{r loadGO}
 geneID2GO <- load_topGO_db(Mpo_GO_GOSLIM, "Transcript", "GO")
 head(geneID2GO)
 ```
 
-```{r At_tair}
+To perform GO semantic clustering, the analysis is based on rrvgo [@sayols2023] and GOSemSim [@yu2020] packages. The available species for this analysis are included in [Bioconductor webpage](https://bioconductor.org/packages/release/BiocViews.html#___OrgDb). The only plant organims included is *Arabidopsis thaliana*, so we will use its code (org.At.tair.db) for this analysis.
+
+```{r At_tair, warning=FALSE}
 save <- GOSemSim::godata("org.At.tair.db", ont="BP")
 ```
 
-```{r SelectContrast, error = TRUE}
-library(RNAseqEasy)
+## Differential gene expression analysis
+
+```{r SelectContrast, error = TRUE, warning=FALSE}
 library(DESeq2)
-dir.create(output_dir, "test")
-test_dir <- file.path(output_dir, "test")
-sampleDir <- file.path(output_dir, "02_Salmon")
+dir.create(file.path(output_dir, "DESeq2"))
+dir.create(file.path(output_dir, "DESeq2", "Tak1_OPDA"))
+output_Dir_DESeq2 <- file.path(output_dir, "test", "DESeq2")
+
 DESeq2_simple(
     output_path = test_dir,
     sampleDir = sampleDir,
@@ -151,7 +178,7 @@ DESeq2_simple(
     Variable = c("Genotype", "Treatment"),
     Design = "Genotype + Treatment + Genotype:Treatment",
     Group = "NO",
-    Name = "test_DESeq2",
+    Name = "Tak1_OPDA",
     Reduced = FALSE,
     log2FCtopGO = 1,
     geneID2GO = geneID2GO,
@@ -162,12 +189,10 @@ DESeq2_simple(
   )
 ```
 
-```{r DESeq2_simple}
-library(RNAseqEasy)
-library(DESeq2)
+```{r DESeq2_simple, warning=FALSE}
 library(topGO)
 result <- DESeq2_simple(
-    output_path = getwd(),
+    output_path = test_dir,
     sampleDir = sampleDir,
     sample_table = sample_table,
     Include = NULL,
@@ -186,4 +211,14 @@ result <- DESeq2_simple(
     orgdb = "org.At.tair.db",
     semdata = save
   )
+```
+
+```{r scatterplot, echo=FALSE, fig.cap="Semantic cluster of Gene Ontologies enriched in Up-regulated genes"}
+ruta_pdf_generado <- file.path(test_dir, "topGO", "topGO_test_DESeq2_Up_Scatterplot.pdf")
+rutas_png_generadas <- pdftools::pdf_convert(
+  pdf = ruta_pdf_generado,
+  format = "png",
+  dpi = 150 # Ajusta la calidad de la imagen según necesites
+)
+knitr::include_graphics(rutas_png_generadas[1])
 ```
