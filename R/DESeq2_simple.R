@@ -76,17 +76,8 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @param Reduced_design A formula specifying the reduced model (required if `reduced = TRUE`).
 #' @param log2FCtopGO Numeric. log2(fold change) threshold for GO analysis. Default is 1.
 #' @param geneID2GO Named list mapping gene IDs to GO terms.
-#' @param ontology GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".
-#' @param algorithm Algorithm for topGO test (default: "weight01").
-#' @param statistic Statistical test to use (default: "fisher").
-#' @param plot_similarity Logical, whether to analyze and visualize GO term similarity.
-#' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
-#' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
-#' @param semdata Optional precomputed semantic data.
-#' @param save_GeneNames Logical, whether to save genes represented by GO terms of interest.
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
-#' @param Ontologies Character vector of GO terms of interest to search for.
 #'
 #' @return No return value. Results are saved to disk.
 #' @export
@@ -94,11 +85,7 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
                           tx2gene, min_count = 10, min_samples = 3, PCA = TRUE,
                           Variable, Design, Group = "NO", Name, Contrast,
                           Reduced = FALSE, Reduced_design = NULL,
-                          log2FCtopGO = 1, ontology = "BP", plot_similarity = TRUE,
-                          geneID2GO, algorithm = "weight01",
-                          statistic = "fisher", Number_GOs = 20,
-                          orgdb = "org.At.tair.db", semdata = NULL,
-                          save_GeneNames = FALSE, Annotation, Ontologies = NULL) {
+                          log2FCtopGO = 1, geneID2GO, Annotation, ...) {
 
   sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table)
   sample_table_some <- get_sample_subset(sample_table_some, Include = Include,
@@ -202,23 +189,17 @@ DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, 
 
   if (length(up_down_genes) > 1) {
     topGO_All(up_down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_All"),
-              output_dir = topGO_path, ontology = ontology,
-              plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-              Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
+              output_dir = topGO_path, Annotation = Annotation, ...)
   }
 
   if (length(up_genes) > 1) {
     topGO_Up <- topGO_All(up_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Up"),
-                          output_dir = topGO_path, ontology = ontology,
-                          plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-                          Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
+                          output_dir = topGO_path, Annotation = Annotation, ...)
   }
 
   if (length(down_genes) > 1) {
     topGO_Down <- topGO_All(down_genes, geneID2GO = geneID2GO, name = paste0(Name, "_Down"),
-                            output_dir = topGO_path, ontology = ontology,
-                            plot_similarity = plot_similarity, algorithm = algorithm, statistic = statistic,
-                            Number_GOs = Number_GOs, orgdb = orgdb, semdata = semdata, save_GeneNames = save_GeneNames, Ontologies = Ontologies, Annotation = Annotation)
+                            output_dir = topGO_path, Annotation = Annotation, ...)
   }
 
   Output <- list(Up = topGO_Up,
