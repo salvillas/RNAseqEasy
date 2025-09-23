@@ -38,8 +38,11 @@ knitr::opts_chunk$set(tidy = FALSE,
                       dev = "png",
                       message = FALSE, error = FALSE, warning = TRUE)
 temp_output_dir <- tempdir()
+current_dir <- getwd()
 library(RNAseqEasy)
 ```
+
+The data used as example in this vignette was generated in the work of Liang et al. [@liang2024] in the liverwort *Marchantia polymorpha*.
 
 ## Input data
 
@@ -209,7 +212,7 @@ After running `DESeq2_simple` with no Contrast parameter, there is an error tell
 -   list(c("Treatment_OPDA_vs_Mock")). Since we established Tak-1 as our reference genotype (first factor), the treatment OPDA vs Mock contrast will get this comparison in the reference genotype, i.e., Tak-1.
 
 ```{r DESeq2_simple, warning=FALSE}
-result <- DESeq2_simple(
+Tak1_OPDA_result <- DESeq2_simple(
     output_path = output_Dir_DESeq2,
     sampleDir = sampleDir,
     sample_table = sample_table,
@@ -220,7 +223,7 @@ result <- DESeq2_simple(
     Design = "Genotype + Treatment + Genotype:Treatment",
     Group = "NO",
     Name = "Tak1_OPDA",
-    Contrast = list(c("Treatment_OPDA_vs_Mock")),
+    Contrast = Tak1_OPDA - Tak1_Mock,
     Reduced = FALSE,
     log2FCtopGO = 1,
     geneID2GO = geneID2GO,
@@ -240,6 +243,31 @@ If we want to perform other possible analyses, these would be the contrast we wo
 -   ***gh3a*** **vs Tak-1 in OPDA conditions**: gh3a_OPDA - Tak1_OPDA, or list(c("Genotype_gh3a_vs_Tak1", "Genotypegh3a.TreatmentOPDA")).
 
 -   **Genes affected by the Genotype:Treatment interaction**: (gh3a_OPDA - gh3a_Mock) - (Tak1_OPDA - Tak1_Mock), or list(c("Genotypegh3a.TreatmentOPDA")). This are genes that will be responding to OPDA treatment in the *gh3a* genotype in a different way that the expected from the response in Tak-1 genotype.
+
+```{r DESeq2_interaction, warning=FALSE}
+dir.create(file.path(output_dir, "DESeq2", "Genotype_Treatment_interaction"))
+output_Dir_interaction <- file.path(output_dir, "DESeq2", "Genotype_Treatment_interaction")
+Genotype_Treatment_result <- DESeq2_simple(
+    output_path = output_Dir_interaction,
+    sampleDir = sampleDir,
+    sample_table = sample_table,
+    Include = NULL,
+    Exclude = NULL,
+    tx2gene = Marchantia7_tx2gene,
+    Variable = c("Genotype", "Treatment"),
+    Design = "Genotype + Treatment + Genotype:Treatment",
+    Group = "NO",
+    Name = "Genotype_Treatment_interaction",
+    Contrast = list(c("Genotypegh3a.TreatmentOPDA")),
+    Reduced = FALSE,
+    log2FCtopGO = 1,
+    geneID2GO = geneID2GO,
+    ontology = "BP",
+    plot_similarity = TRUE,
+    orgdb = "org.At.tair.db",
+    semdata = save
+  )
+```
 
 ### Sample selection
 
@@ -285,47 +313,153 @@ knitr::include_graphics(ruta_PCA_generado)
 ```
 
 -   A "topGO" folder, including results of GO enrichment analysis for Up, Down and Up+Down DEGs ($padj \le 0.05$, and $log2(FC) \ge 1$ for Up-regulated and $log2(FC) \le -1$ for Down-regulated genes):
-    -   Two tab-delimited text files including results from the GO enrichement analysis. One include detailed results (topGO_Name_All/Up/Down_results.txt) and the other only enriched GO terms and their p-values (topGO_Name_All/Up/Down_pvals.txt).
-    
+    -   Two tab-delimited text files including results from the GO enrichment analysis. One include detailed results (topGO_Name_All/Up/Down_results.txt) and the other only enriched GO terms and their p-values (topGO_Name_All/Up/Down_pvals.txt).
+
 ```{r SigGOs, echo=FALSE}
 sigGOs <- read.delim(file.path(output_Dir_DESeq2, "topGO","topGO_Tak1_OPDA_Up_results.txt"))
 head(sigGOs)
 ```
 
-    -   Three PDF files for GO enrichment visualization:
-        -   A tree map plot of semantic-clustered GO terms (topGO_Name_All/Up/Down_Treemap.pdf).
+-   Three PDF files for GO enrichment visualization:
+    -   A tree map plot of semantic-clustered GO terms (topGO_Name_All/Up/Down_Treemap.pdf).
 
-        -   A scatter plot of semantic-clustered GO terms (topGO_Name_All/Up/Down_Scatterplot.pdf).
-        
-        -   A bubble plot of all enriched GO terms in descendant order according to their enrichment (topGO_Name_All/Up/Down_bubble.pdf).
-        
+    -   A scatter plot of semantic-clustered GO terms (topGO_Name_All/Up/Down_Scatterplot.pdf).
 
-```{r tree, echo=FALSE, fig.cap="Tree map of Gene Ontologies enriched in Up-regulated genes"}
-ruta_pdf_generado <- file.path(output_Dir_DESeq2, "topGO", "topGO_Tak1_OPDA_Up_Treemap.pdf")
-rutas_png_generadas <- pdftools::pdf_convert(
-  pdf = ruta_pdf_generado,
+    -   A bubble plot of all enriched GO terms in descendant order according to their enrichment (topGO_Name_All/Up/Down_bubble.pdf).
+
+```{r tree1, include=FALSE}
+setwd(file.path(output_Dir_DESeq2, "topGO"))
+path_pdf_tree <- file.path(output_Dir_DESeq2, "topGO", "topGO_Tak1_OPDA_Up_Treemap.pdf")
+path_png_tree <- pdftools::pdf_convert(
+  pdf = path_pdf_tree,
   format = "png",
   dpi = 150 
 )
-knitr::include_graphics(rutas_png_generadas[1])
+path_png_tree <- file.path(output_Dir_DESeq2, "topGO", path_png_tree)
+setwd(current_dir)
 ```
 
-```{r scatterplot, echo=FALSE, fig.cap="Semantic cluster of Gene Ontologies enriched in Up-regulated genes"}
-ruta_pdf_generado <- file.path(output_Dir_DESeq2, "topGO", "topGO_Tak1_OPDA_Up_Scatterplot.pdf")
-rutas_png_generadas <- pdftools::pdf_convert(
-  pdf = ruta_pdf_generado,
-  format = "png",
-  dpi = 150 
-)
-knitr::include_graphics(rutas_png_generadas[1])
+```{r tree2, echo=FALSE, fig.cap="Tree map of Gene Ontologies enriched in Up-regulated genes"}
+knitr::include_graphics(path_png_tree[1])
 ```
 
-```{r bubble, echo=FALSE, fig.cap="Bubble plot of Gene Ontologies enriched in Up-regulated genes"}
-ruta_pdf_generado <- file.path(output_Dir_DESeq2, "topGO", "topGO_Tak1_OPDA_Up_bubble.pdf")
-rutas_png_generadas <- pdftools::pdf_convert(
-  pdf = ruta_pdf_generado,
+```{r scatterplot1, include=FALSE}
+setwd(file.path(output_Dir_DESeq2, "topGO"))
+path_pdf_scatter <- file.path(output_Dir_DESeq2, "topGO", "topGO_Tak1_OPDA_Up_Scatterplot.pdf")
+path_png_scatter <- pdftools::pdf_convert(
+  pdf = path_pdf_scatter,
   format = "png",
   dpi = 150 
 )
-knitr::include_graphics(rutas_png_generadas[1])
+path_png_scatter <- file.path(output_Dir_DESeq2, "topGO", path_png_scatter)
+setwd(current_dir)
+```
+
+```{r scatterplot2, echo=FALSE, fig.cap="Semantic cluster of Gene Ontologies enriched in Up-regulated genes"}
+knitr::include_graphics(path_png_scatter[1])
+```
+
+```{r bubble1, include=FALSE}
+setwd(file.path(output_Dir_DESeq2, "topGO"))
+path_pdf_bubble <- file.path(output_Dir_DESeq2, "topGO", "topGO_Tak1_OPDA_Up_bubble.pdf")
+path_png_bubble <- pdftools::pdf_convert(
+  pdf = path_pdf_bubble,
+  format = "png",
+  dpi = 150 
+)
+path_png_bubble <- file.path(output_Dir_DESeq2, "topGO", path_png_bubble)
+setwd(current_dir)
+```
+
+```{r bubble2, echo=FALSE, fig.cap="Bubble plot of Gene Ontologies enriched in Up-regulated genes"}
+knitr::include_graphics(path_png_bubble[1])
+```
+
+## Clustering of co-expressed genes
+
+Another application of the package is the generation of co-expressed gene modules by the implementation of components from the WGCNA [@WGCNA] package. This functionality is included in the `WGCNA_Modules` function. As `DESeq2_simple` function, it requires to specify the `output_path`, `sampleDir`, `sample_table`, `Variables`, `tx2gene`, `Name`, `geneID2GO` and `Annotation` parameters. The specific parameters that have also to be included in this function are:
+
+-   `DEGs`: A vector of Gene IDs. This will be the input set of genes that we want to cluster. The Gene IDs must correspond to the transcriptome that we are using in the analysis.
+-   `Power`: Soft thresholding power used in the network construction (check the [WGNA manual](https://cran.r-project.org/web/packages/WGCNA/WGCNA.pdf) or [tutorial](https://fuzzyatelin.github.io/bioanth-stats/module-F21-Group1/module-F21-Group1.html) for more info. If we run the `WGCNA_Modules` function without the `Power` parameter specified, it will stops and generate a "softthresholdingpower.pdf" file, that can help us to select the power. As an alternative, this table suggest the power to select depending on the number of samples and type of network: ![Suggested Soft thresholding powers](WGCNA_table.png)
+
+Most of the advanced parameters in for the `blockwiseModules` function of the WGCNA package for the module generation are set to default.
+
+As an example, we will use the output DEGs from the Genotype:Treatment interaction in `DESeq2_simple`, i.e., genes that significantly respond to the OPDA treatment in the *gh3a* genotype in a different way than the Tak-1 genotype. This different response can be in different ways, so we will use the gene co-expression modules to explore this responses. 
+
+```{r DEGs_interaction}
+DESeq2_simple_output <- sigtable <- read.table(file.path(output_Dir_interaction, "Genotype_Treatment_interaction.txt"), header = TRUE)
+
+## We get rownames (GeneIDs) of the output data frame from DESeq2_simple(), applying a filter of log2FC > 1 for Up-regulated DEGs and log2FC < -1 for Down-regulation.
+
+DEGs <- rownames(DESeq2_simple_output filter(log2FoldChange > 1 | log2FoldChange < -1))
+```
+
+Now that we already have selected our input gene set, we can run the `WGCNA_Modules` function:
+
+```{r WGCNA_Modules_First, error = TRUE}
+library(WGCNA)
+dir.create(file.path(output_dir, "WGCNA"))
+output_WGCNA <- file.path(output_dir, "WGCNA")
+COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
+                                   sampleDir = sampleDir,
+                                   sample_table = sample_table,
+                                   DEGs = DEGs,
+                                   Variables = c("Genotype", "Treatment"),
+                                   tx2gene = Marchantia7_tx2gene,
+                                   Name = "Genotype_Treatment_Interaction",
+                                   NumberCol = 1,
+                                   geneID2GO = geneID2GO,
+                                   semdata = save)
+```
+
+We did not include the `Power` parameter, so the function stopped at warned us to select it based on the "softthresholdingpower.pdf" file. 
+
+```{r soft1, include=FALSE}
+setwd(output_WGCNA)
+path_pdf_soft <- file.path(output_WGCNA, "softthresholdingpower.pdf")
+path_png_soft <- pdftools::pdf_convert(
+  pdf = path_pdf_soft,
+  format = "png",
+  dpi = 150 
+)
+path_png_soft <- file.path(output_WGCNA, path_png_soft)
+setwd(current_dir)
+```
+
+```{r soft2, echo=FALSE, fig.cap="R^2 values as a function of the soft thresholds"}
+knitr::include_graphics(path_png_soft[1])
+```
+
+Based on this plot, we will select 22 as the soft thresholding power since it is the first value that rises the threshold. 
+
+```{r WGCNA_Modules_Second}
+COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
+                                   sampleDir = sampleDir,
+                                   sample_table = sample_table,
+                                   DEGs = DEGs,
+                                   Variables = c("Genotype", "Treatment"),
+                                   tx2gene = Marchantia7_tx2gene,
+                                   Name = "Genotype_Treatment_Interaction",
+                                   Power = 22,
+                                   NumberCol = 1,
+                                   geneID2GO = geneID2GO,
+                                   semdata = save)
+```
+
+There are 10 different clusters that have been generated after the analysis. The average behavior of genes from each category are summarized in the "Summary_Modules_Name.pdf" file:
+
+```{r Summary_Modules1, include=FALSE}
+setwd(output_WGCNA)
+path_pdf_modules <- file.path(output_WGCNA, "Summary_Modules_Genotype_Treatment_Interaction.pdf")
+path_png_modules <- pdftools::pdf_convert(
+  pdf = path_pdf_modules,
+  format = "png",
+  dpi = 150 
+)
+path_png_modules <- file.path(output_WGCNA, path_png_modules)
+setwd(current_dir)
+```
+
+```{r Summary_Modules2, echo=FALSE, fig.cap="Summary of gene expression behavior in each co-expression module of genes responding to the Genotype:Treatment interaction"}
+knitr::include_graphics(path_png_modules[1])
 ```
