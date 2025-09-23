@@ -9,16 +9,8 @@ run_topGO_for_modules(
   Name,
   input_path,
   output_path_topGO,
-  ontology = "BP",
-  algorithm = "weight01",
-  statistic = "fisher",
-  plot_similarity = TRUE,
-  Number_GOs = 20,
-  orgdb = "org.At.tair.db",
-  semdata = NULL,
-  save_GeneNames = FALSE,
   Annotation,
-  Ontologies = NULL
+  ...
 )
 }
 \arguments{
@@ -29,22 +21,6 @@ run_topGO_for_modules(
 \item{input_path}{Directory where '"Name"_geneInfo.csv' file was saved.}
 
 \item{output_path_topGO}{Directory where results will be saved.}
-
-\item{ontology}{GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".}
-
-\item{algorithm}{Algorithm for topGO test (default: "weight01").}
-
-\item{statistic}{Statistical test to use (default: "fisher").}
-
-\item{plot_similarity}{Logical, whether to analyze and visualize GO term similarity.}
-
-\item{Number_GOs}{Number of top GO term names to plot in the scatterplot. Defaults to 20.}
-
-\item{orgdb}{OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".}
-
-\item{semdata}{Optional precomputed semantic data.}
-
-\item{save_GeneNames}{Logical, whether to save genes represented by GO terms of interest.}
 
 \item{Annotation}{Two column data frame. First column must include Gene IDs.
 Second column must include functional annotation.}

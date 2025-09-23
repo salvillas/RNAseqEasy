@@ -22,17 +22,9 @@ DESeq2_simple(
   Reduced = FALSE,
   Reduced_design = NULL,
   log2FCtopGO = 1,
-  ontology = "BP",
-  plot_similarity = TRUE,
   geneID2GO,
-  algorithm = "weight01",
-  statistic = "fisher",
-  Number_GOs = 20,
-  orgdb = "org.At.tair.db",
-  semdata = NULL,
-  save_GeneNames = FALSE,
   Annotation,
-  Ontologies = NULL
+  ...
 )
 }
 \arguments{
@@ -67,31 +59,13 @@ Default to NULL.}
 
 \item{log2FCtopGO}{Numeric. log2(fold change) threshold for GO analysis. Default is 1.}
 
-\item{ontology}{GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".}
-
-\item{plot_similarity}{Logical, whether to analyze and visualize GO term similarity.}
-
 \item{geneID2GO}{Named list mapping gene IDs to GO terms.}
-
-\item{algorithm}{Algorithm for topGO test (default: "weight01").}
-
-\item{statistic}{Statistical test to use (default: "fisher").}
-
-\item{Number_GOs}{Number of top GO term names to plot in the scatterplot. Defaults to 20.}
-
-\item{orgdb}{OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".}
-
-\item{semdata}{Optional precomputed semantic data.}
-
-\item{save_GeneNames}{Logical, whether to save genes represented by GO terms of interest.}
 
 \item{Annotation}{Two column data frame. First column must include Gene IDs.
 Second column must include functional annotation.}
-
-\item{Ontologies}{Character vector of GO terms of interest to search for.}
 }
 \value{
-No return value. Results are saved to disk.
+A list with \code{topGO_all} results for Up and Down regulated genes.
 }
 \description{
 This function performs differential expression analysis using DESeq2, optionally

@@ -79,7 +79,7 @@ plot_deseq_heatmap <- function(dds, res, variables, name, output_dir, width = 6,
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
 #'
-#' @return No return value. Results are saved to disk.
+#' @return A list with `topGO_all` results for Up and Down regulated genes.
 #' @export
 DESeq2_simple <- function(output_path, sampleDir, sample_table, Include = NULL, Exclude = NULL,
                           tx2gene, min_count = 10, min_samples = 3, PCA = TRUE,

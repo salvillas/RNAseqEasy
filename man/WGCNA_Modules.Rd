@@ -19,16 +19,8 @@ WGCNA_Modules(
   Colors_plot = NULL,
   NumberCol = 1,
   geneID2GO,
-  ontology = "BP",
-  algorithm = "weight01",
-  statistic = "fisher",
-  plot_similarity = TRUE,
-  Number_GOs = 20,
-  orgdb = "org.At.tair.db",
-  semdata = NULL,
-  save_GeneNames = save_GeneNames,
   Annotation,
-  Ontologies = NULL
+  ...
 )
 }
 \arguments{
@@ -56,26 +48,8 @@ WGCNA_Modules(
 
 \item{geneID2GO}{Named list mapping gene IDs to GO terms.}
 
-\item{ontology}{GO ontology to use ("BP", "MF", "CC"). Defaults to "BP".}
-
-\item{algorithm}{Algorithm for topGO test (default: "weight01").}
-
-\item{statistic}{Statistical test to use (default: "fisher").}
-
-\item{plot_similarity}{Logical, whether to analyze and visualize GO term similarity.}
-
-\item{Number_GOs}{Number of top GO term names to plot in the scatterplot. Defaults to 20.}
-
-\item{orgdb}{OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".}
-
-\item{semdata}{Optional precomputed semantic data.}
-
-\item{save_GeneNames}{Logical, whether to save genes represented by GO terms of interest.}
-
 \item{Annotation}{Two column data frame. First column must include Gene IDs.
 Second column must include functional annotation.}
-
-\item{Ontologies}{Character vector of GO terms of interest to search for.}
 
 \item{Selection}{Named vector indicating samples to include/exclude.}
 }
