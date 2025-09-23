@@ -280,6 +280,7 @@ run_topGO_for_modules <- function(geneID2GO, Name,
 #' @param Name Character. Base name for output files.
 #' @param Colors_plot Named vector of colors for groups.
 #' @param NumberCol Integer. Number of columns for facet_wrap in ggplot.
+#' @param TOMType One of "none", "unsigned", "signed", "signed Nowick", "unsigned 2", "signed 2" and "signed Nowick 2". Default to "signed".
 #' @param geneID2GO Named list mapping gene IDs to GO terms.
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
@@ -287,7 +288,7 @@ run_topGO_for_modules <- function(geneID2GO, Name,
 #' @return A list with WGCNA results and plots.
 #' @export
 WGCNA_Modules <- function(output_path, sampleDir, sample_table, Include = NULL, Exclude = NULL, DEGs, Variables,
-                          tx2gene, Filter = NULL, Power, Name, Colors_plot = NULL, NumberCol = 1,
+                          tx2gene, Filter = NULL, Power, Name, Colors_plot = NULL, NumberCol = 1, TOMType = "signed",
                           geneID2GO, Annotation, ...) {
   # Subset samples
   sample_table_some <- add_sample_path(sampleDir = sampleDir, sample_table = sample_table)
@@ -338,9 +339,9 @@ WGCNA_Modules <- function(output_path, sampleDir, sample_table, Include = NULL, 
   if (missing(Power)) stop("Choose a power based on softthresholdingpower.pdf")
 
   # Network construction
-  net <- blockwiseModules(datExpr, power = Power, TOMType = "signed", minModuleSize = 30,
+  net <- blockwiseModules(datExpr, power = Power, TOMType = TOMType, minModuleSize = 30,
                           reassignThreshold = 0, mergeCutHeight = 0.25, numericLabels = TRUE,
-                          pamRespectsDendro = FALSE, saveTOMs = TRUE, saveTOMFileBase = "Salva", verbose = 3)
+                          pamRespectsDendro = FALSE, saveTOMs = TRUE, saveTOMFileBase = "RNAseqEasy", verbose = 3)
 
   # Save module info and plots
   rownames(datTraits) <- datTraits$Sample
