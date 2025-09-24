@@ -256,9 +256,11 @@ run_topGO_for_modules <- function(geneID2GO, Name,
 
   for (color in unique(geneInfo$moduleColor)) {
     genes <- geneInfo$Genes[geneInfo$moduleColor == color]
-    topGO_module <- topGO_All(DEG = genes, geneID2GO = geneID2GO, name = color,
-                              output_dir = output_path_topGO, Annotation = Annotation, ...)
-    results_list[[color]] <- topGO_module
+    if (length(genes) > 4) {
+      topGO_module <- topGO_All(DEG = genes, geneID2GO = geneID2GO, name = color,
+                                output_dir = output_path_topGO, Annotation = Annotation, ...)
+      results_list[[color]] <- topGO_module
+    }
   }
   return(results_list)
   }
