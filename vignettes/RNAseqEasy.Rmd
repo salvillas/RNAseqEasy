@@ -8,13 +8,14 @@ abstract: >
   differential expression analysis, functional enrichment, gene co-expression 
   or data visualization among others, from RNAseq data. However, many of them
   require independent analysis and, in many ocasions, relatively high
-  programming skills. The package RNAseqEasy provides an integration of some of
-  this tools into a single user-friendly workflow, and tries to simplify it to 
-  require only basic notions in R programming. It is mainly based on DESeq2 
-  [@DESeq2], topGO [@topGO] and WGCNA [@WGCNA] packages to carry out PCA
-  exploratory plots, differential expression analysis, gene ontology enrichment 
-  analysis and gene-coexpression from Salmon [@patro2017] quantified data. This 
-  vignette explains the use of the package and demonstrates typical workflows.
+  programming skills. The package RNAseqEasy provides an integration of some
+  of this tools into a single user-friendly workflow, and tries to simplify it
+  to require only basic notions in R programming. It is mainly based on DESeq2
+  [@DESeq2], topGO [@topGO] and WGCNA [@WGCNA] packages to carry out PCA 
+  exploratory plots, differential expression analysis, gene ontology 
+  enrichment analysis and gene-coexpression from Salmon [@patro2017] 
+  quantified data. This vignette explains the use of the package and 
+  demonstrates typical workflows.
   
   
   RNAseqEasy package version: `r packageVersion("RNAseqEasy")`
@@ -42,7 +43,91 @@ current_dir <- getwd()
 library(RNAseqEasy)
 ```
 
+# Aim
+
+The aim of this package is to simplify RNAseq analysis by integrating some pre-existing widely used packages (DESeq2 [@DESeq2], topGO [@topGO], WGCNA [@WGCNA] and rrvgo [@sayols2023], in a tidyverse [@wickham2019] environment) to obtain results and visualization after performing differential expression analysis, PCA, Gene Ontology enrichment and gene co-expression clustering.
+
+```{r Diagram, fig.cap="RNAseqEasy workflow", echo = FALSE}
+library(DiagrammeR)
+
+grViz("
+digraph RNAseqEasy {
+  graph [layout = dot, rankdir = TB]
+
+  node [shape = box, style = filled, fillcolor = lightblue, fontname = Helvetica]
+
+  A [label = 'Input\n(Salmon + sample table)']
+  B [label = 'Functional annotation\n(tx2gene + GO terms)']
+  C [label = 'DEGs\n(DESeq2)']
+  D [label = 'Enriched GO terms\n(topGO)']
+  E [label = 'PCA']
+  F [label = 'Co-expression clusters\n(WGCNA)']
+  G [label = 'Visualization & results', shape = ellipse, fillcolor = '#67feee']
+
+  A -> C
+  B -> C
+  A -> E
+  C -> E
+  C -> D
+  C -> F
+  F -> D
+  C -> G
+  D -> G
+  E -> G
+  F -> G
+}
+")
+```
+
 The data used as example in this vignette was generated in the work of Liang et al. [@liang2024] in the liverwort *Marchantia polymorpha*.
+
+# Standard workflow
+
+## Quick start
+
+The main function in `RNAseqEasy` package is `DESeq2_simple()`, which performs principal component analysis, differential expression analysis and Gene Ontology enrichment analysis from quantified samples.
+
+```{r QuickStart, eval=FALSE}
+DiffExprAn <- DESeq2_simple(
+  output_path = output_Dir_DESeq2, # Path to save results
+  sampleDir = sampleDir, # Directory with your Salmon quantified data
+  sample_table = sample_table, # Data frame with your sample names and variables
+  tx2gene = Marchantia7_tx2gene, # Data frame with your Gene - Transcript relationship
+  Variable = c("Genotype", "Treatment"), # Variables from sample_table affecting your analysis
+  Design = "Genotype + Treatment + Genotype:Treatment", # How to model samples
+  Name = "Tak1_OPDA", # Name to include in result files
+  Contrast = Tak1_OPDA - Tak1_Mock, 
+  geneID2GO = geneID2GO, # GO functional annotation
+  orgdb = "org.At.tair.db" # Reference organism from rrvgo database
+  )
+```
+
+```{r DESeq2_simple Diagram2, fig.cap="DESeq2_simple() function general scheme", echo = FALSE}
+grViz("
+digraph RNAseqEasy {
+  graph [layout = dot, rankdir = TB]
+
+  node [shape = box, style = filled, fillcolor = lightblue, fontname = Helvetica]
+
+  A [label = 'quant files \n(Salmon)']
+  B [label = 'Sample data']
+  C [label = 'Transcripts-Genes data frame \n(tx2gene)']
+  D [label = 'GO annotation']
+  E [label = 'DESeq2_simple() function', fillcolor = '#aeffac']
+  F [label = 'PCA']
+  G [label = 'Differential expression analysis \n(DEGseq2)']
+  H [label = 'Gene Ontology Enrichment \n(topGO)']
+
+  A -> E
+  B -> E
+  C -> E
+  D -> E
+  E -> F
+  E -> G
+  E -> H
+}
+")
+```
 
 ## Input data
 
@@ -83,7 +168,7 @@ sampleDir <- file.path(output_dir, "02_Salmon")
 
 For each experiment analysis, it is required to generate a data frame [2] (we call it `sample_table`) which correlates the name of each sequenced sample with the variables describing it in the experiment. So, it will include a `Sample` column including sample names, and an extra column for each variable of factor that were included in the experiment design. In our example, we include 12 different samples (Wendy1 to Wendy12), and there were 3 different variables describing them:
 
--   `Genotype`. Samples were divided in two different genotypes: 'Tak1' (wild-type organisms) and 'gh3a' (CRISPR-Cas9 mutants).
+-   `Genotype`. Samples were divided in two different genotypes: 'Tak1' (wild-type organisms) and '*gh3a*' (CRISPR-Cas9 mutants).
 -   `Treatment`. Two different treatments were applied to samples: 'Mock' or 'OPDA' (exposure to a high concentration of a plant stress hormone from jasmonic acid family).
 -   `Replicate`. Each category of samples included 3 independent biological replicates.
 
@@ -307,7 +392,7 @@ knitr::include_graphics(rutas_png_generadas[1])
 
 -   A png file including the PCA of all samples included in the analysis, only if `PCA` parameter is set as the `TRUE` default value (PCA_Name.png).
 
-```{r PCA, echo=FALSE, fig.cap="PCA plot of PC1 vs PC2, using 500 top genes"}
+```{r PCA, echo=FALSE, fig.cap="PCA plot of PC1 vs PC2, using 500 top genes", out.height= 0.6}
 ruta_PCA_generado <- file.path(output_Dir_DESeq2, "PCA_Tak1_OPDA.png")
 knitr::include_graphics(ruta_PCA_generado)
 ```
@@ -384,7 +469,7 @@ Another application of the package is the generation of co-expressed gene module
 
 Most of the advanced parameters in for the `blockwiseModules` function of the WGCNA package for the module generation are set to default.
 
-As an example, we will use the output DEGs from the Genotype:Treatment interaction in `DESeq2_simple`, i.e., genes that significantly respond to the OPDA treatment in the *gh3a* genotype in a different way than the Tak-1 genotype. This different response can be in different ways, so we will use the gene co-expression modules to explore this responses. 
+As an example, we will use the output DEGs from the Genotype:Treatment interaction in `DESeq2_simple`, i.e., genes that significantly respond to the OPDA treatment in the *gh3a* genotype in a different way than the Tak-1 genotype. This different response can be in different ways, so we will use the gene co-expression modules to explore this responses.
 
 ```{r DEGs_interaction}
 DESeq2_simple_output <- sigtable <- read.table(file.path(output_Dir_interaction, "Genotype_Treatment_interaction.txt"), header = TRUE)
@@ -412,7 +497,7 @@ COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
                                    semdata = save)
 ```
 
-We did not include the `Power` parameter, so the function stopped at warned us to select it based on the "softthresholdingpower.pdf" file. 
+We did not include the `Power` parameter, so the function stopped at warned us to select it based on the "softthresholdingpower.pdf" file.
 
 ```{r soft1, include=FALSE}
 setwd(output_WGCNA)
@@ -430,7 +515,7 @@ setwd(current_dir)
 knitr::include_graphics(path_png_soft[1])
 ```
 
-Based on this plot, we will select 22 as the soft thresholding power since it is the first value that rises the threshold. 
+Based on this plot, we will select 22 as the soft thresholding power since it is the first value that rises the threshold.
 
 ```{r WGCNA_Modules_Second}
 COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
@@ -462,4 +547,56 @@ setwd(current_dir)
 
 ```{r Summary_Modules2, echo=FALSE, fig.cap="Summary of gene expression behavior in each co-expression module of genes responding to the Genotype:Treatment interaction"}
 knitr::include_graphics(path_png_modules[1])
+```
+
+```{r topGO_All Diagram2, fig.cap="topGO_All() function general scheme, echo = FALSE}
+
+grViz("
+digraph RNAseqEasy {
+  graph [layout = dot, rankdir = TB]
+
+  node [shape = box, style = filled, fillcolor = lightblue, fontname = Helvetica]
+
+  A [label = 'Transcript IDs vector']
+  B [label = 'Transcripts-GOs annotation \n(geneID2GO)']
+  C [label = 'GOSemSimDATA from model organism \n(semdata)']
+  D [label = 'topGO_All() function', fillcolor = '#ffc0ff']
+  E [label = 'Gene Ontology Enrichment \n(topGO)']
+  F [label = 'Semantic clustering \n(rrvgo)']
+
+  A -> D
+  B -> D
+  C -> D
+  D -> E
+  D -> F
+}
+")
+```
+
+```{r WGCNA_Module Diagram2, fig.cap="WGCNA_Module() function general scheme, out.height= 0.5, echo = FALSE}
+
+grViz("
+digraph RNAseqEasy {
+  graph [layout = dot, rankdir = TB]
+
+  node [shape = box, style = filled, fillcolor = lightblue, fontname = Helvetica]
+
+  A [label = 'Transcript IDs vector']
+  B [label = 'quant files \n(Salmon)']
+  C [label = 'Sample data']
+  D [label = 'Transcripts-Genes data frame \n(tx2gene)']
+  E [label = 'GO annotation']
+  F [label = 'WGCNA_Module() function', fillcolor = '#ffffe0']
+  G [label = 'Co-expression cluster analysis \n(WGCNA)']
+  H [label = 'Gene Ontology Enrichment \n(topGO)']
+
+  A -> F
+  B -> F
+  C -> F
+  D -> F
+  E -> F
+  F -> G
+  F -> H
+}
+")
 ```
