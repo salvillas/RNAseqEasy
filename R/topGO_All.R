@@ -233,103 +233,108 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
                                          method = "Rel")
 
   if (nrow(simMatrix) < 2) {
-    warning("Not enough terms for similarity analysis.")
-    return(NULL)
-  }
+    warning("Not enough terms for similarity analysis. Skipping visualization.")
+    return(list(
+      similarity = simMatrix,
+      reduced = NULL,
+      scatterplot = NULL,
+      treemap_file = NULL
+    ))
+  } else {
+    reducedTerms <- rrvgo::reduceSimMatrix(simMatrix, scores = scores,
+                                           threshold = 0.5, orgdb = orgdb)
 
-  reducedTerms <- rrvgo::reduceSimMatrix(simMatrix, scores = scores,
-                                         threshold = 0.5, orgdb = orgdb)
+    coords <- stats::cmdscale(as.dist(1 - simMatrix), k = 2, eig=TRUE)$points
+    df <- cbind(as.data.frame(coords),
+                reducedTerms[match(rownames(coords), reducedTerms$go),
+                             c("term", "parent", "parentTerm", "score")]) %>%
+      dplyr::arrange(-score)
 
-  coords <- stats::cmdscale(as.dist(1 - simMatrix), k = 2, eig=TRUE)$points
-  df <- cbind(as.data.frame(coords),
-              reducedTerms[match(rownames(coords), reducedTerms$go),
-                           c("term", "parent", "parentTerm", "score")]) %>%
-    dplyr::arrange(-score)
+    top_terms <- df$term[1:min(Number_GOs, nrow(df))]
 
-  top_terms <- df$term[1:min(Number_GOs, nrow(df))]
+    # Clustering
+    kmax <- if (nrow(df) <= 10) nrow(df) - 1 else 10
+    viz <- factoextra::fviz_nbclust(df[, 1:2], kmeans, method = "silhouette", k.max = kmax)
+    nclust <- as.integer(viz$data[viz$data$y == max(viz$data$y),"clusters"])
+    set.seed(123)
+    df$clust <- as.factor(kmeans(df[, 1:2], centers = nclust)$cluster)
+    df$label <- ifelse(df$term %in% top_terms, df$parentTerm, "")
 
-  # Clustering
-  kmax <- if (nrow(df) <= 10) nrow(df) - 1 else 10
-  viz <- factoextra::fviz_nbclust(df[, 1:2], kmeans, method = "silhouette", k.max = kmax)
-  nclust <- as.integer(viz$data[viz$data$y == max(viz$data$y),"clusters"])
-  set.seed(123)
-  df$clust <- as.factor(kmeans(df[, 1:2], centers = nclust)$cluster)
-  df$label <- ifelse(df$term %in% top_terms, df$parentTerm, "")
+    df_modified <- df %>%
+      tibble::rownames_to_column("GO_ID") %>%
+      dplyr::group_by(clust) %>%
+      dplyr::group_modify(~ {
+        # .x contains current clúster data
+        data_current_cluster <- .x
 
-  df_modified <- df %>%
-    tibble::rownames_to_column("GO_ID") %>%
-    dplyr::group_by(clust) %>%
-    dplyr::group_modify(~ {
-      # .x contains current clúster data
-      data_current_cluster <- .x
+        # Verify if all labels in this cluster are empty
+        if (all(data_current_cluster$label == "")) {
+          # If all labels are empty:
+          # 1. Arrange in desc according to score values
+          cluster_modified <- data_current_cluster %>%
+            arrange(desc(score))
 
-      # Verify if all labels in this cluster are empty
-      if (all(data_current_cluster$label == "")) {
-        # If all labels are empty:
-        # 1. Arrange in desc according to score values
-        cluster_modified <- data_current_cluster %>%
-          arrange(desc(score))
+          # 2. Identify rows to be updated (first two, unless cluster is smaller)
+          rows_to_update_idx <- head(1:nrow(cluster_modified), 2)
 
-        # 2. Identify rows to be updated (first two, unless cluster is smaller)
-        rows_to_update_idx <- head(1:nrow(cluster_modified), 2)
-
-        # 3. Update 'label' column of these rows with 'partenTerm' value
-        if (length(rows_to_update_idx) > 0) {
-          cluster_modified$label[rows_to_update_idx] <- cluster_modified$parentTerm[rows_to_update_idx]
+          # 3. Update 'label' column of these rows with 'partenTerm' value
+          if (length(rows_to_update_idx) > 0) {
+            cluster_modified$label[rows_to_update_idx] <- cluster_modified$parentTerm[rows_to_update_idx]
+          }
+          # Return modified cluster (and arranged according to 'score')
+          return(cluster_modified)
+        } else {
+          # Return previous cluster if there were labelled rows already
+          return(data_current_cluster)
         }
-        # Return modified cluster (and arranged according to 'score')
-        return(cluster_modified)
-      } else {
-        # Return previous cluster if there were labelled rows already
-        return(data_current_cluster)
-      }
-    }) %>%
-    ungroup() %>% # Ungroup to obtain final modified data frame
-    tibble::column_to_rownames("GO_ID")
+      }) %>%
+      ungroup() %>% # Ungroup to obtain final modified data frame
+      tibble::column_to_rownames("GO_ID")
 
 
-  # Scatterplot
-  scatterplot <- ggplot2::ggplot(df_modified, ggplot2::aes(x = V1, y = V2, color = clust)) +
-    ggplot2::geom_point(ggplot2::aes(size = score), alpha = 0.5) +
-    ggplot2::scale_color_manual(guide = "none", values = as.vector(ggsci::pal_npg("nrc")(10))) +
-    ggplot2::scale_size_continuous(guide = "none", range = c(0, 25)) +
-    ggplot2::scale_x_continuous(name="") +
-    ggplot2::scale_y_continuous(name="") +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(axis.text.x=ggplot2::element_blank(),
-                   axis.text.y=ggplot2::element_blank(),
-                   panel.grid = ggplot2::element_blank())+
-    ggrepel::geom_label_repel(ggplot2::aes(label = label),
-                              data = subset(df_modified, parent == rownames(df_modified)),
-                              box.padding = grid::unit(1, "lines"),
-                              size = 10, max.overlaps = 100)
+    # Scatterplot
+    scatterplot <- ggplot2::ggplot(df_modified, ggplot2::aes(x = V1, y = V2, color = clust)) +
+      ggplot2::geom_point(ggplot2::aes(size = score), alpha = 0.5) +
+      ggplot2::scale_color_manual(guide = "none", values = as.vector(ggsci::pal_npg("nrc")(10))) +
+      ggplot2::scale_size_continuous(guide = "none", range = c(0, 25)) +
+      ggplot2::scale_x_continuous(name="") +
+      ggplot2::scale_y_continuous(name="") +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.x=ggplot2::element_blank(),
+                     axis.text.y=ggplot2::element_blank(),
+                     panel.grid = ggplot2::element_blank())+
+      ggrepel::geom_label_repel(ggplot2::aes(label = label),
+                                data = subset(df_modified, parent == rownames(df_modified)),
+                                box.padding = grid::unit(1, "lines"),
+                                size = 10, max.overlaps = 100)
 
 
 
-  # Treemap
-  treemap_file <- NULL
-  if (!is.null(output_prefix)) {
-    scatter_file <- paste0(output_prefix, "_Scatterplot.pdf")
-    treemap_file <- paste0(output_prefix, "_Treemap.pdf")
-    ggplot2::ggsave(scatter_file, plot = scatterplot, width = 18, height = 10, units = units, scale= 1.5, limitsize = FALSE)
+    # Treemap
+    treemap_file <- NULL
+    if (!is.null(output_prefix)) {
+      scatter_file <- paste0(output_prefix, "_Scatterplot.pdf")
+      treemap_file <- paste0(output_prefix, "_Treemap.pdf")
+      ggplot2::ggsave(scatter_file, plot = scatterplot, width = 18, height = 10, units = units, scale= 1.5, limitsize = FALSE)
 
-    grDevices::pdf(treemap_file, width = width, height = height)
-    treemap::treemap(reducedTerms,
-                     index = c("parentTerm", "term"),
-                     vSize = "score",
-                     type = "index",
-                     title = "",
-                     palette = rep(ggsci::pal_npg("nrc")(10), length(unique(reducedTerms$parent))),
-                     fontcolor.labels = c("#FFFFFFDD", "#00000080"),
-                     bg.labels = 0,
-                     border.col = "#00000080")
-    grDevices::dev.off()
+      grDevices::pdf(treemap_file, width = width, height = height)
+      treemap::treemap(reducedTerms,
+                       index = c("parentTerm", "term"),
+                       vSize = "score",
+                       type = "index",
+                       title = "",
+                       palette = rep(ggsci::pal_npg("nrc")(10), length(unique(reducedTerms$parent))),
+                       fontcolor.labels = c("#FFFFFFDD", "#00000080"),
+                       bg.labels = 0,
+                       border.col = "#00000080")
+      grDevices::dev.off()
+    }
+
+    return(list(similarity = simMatrix,
+                reduced = reducedTerms,
+                scatterplot = scatterplot,
+                treemap_file = treemap_file))
   }
-
-  return(list(similarity = simMatrix,
-              reduced = reducedTerms,
-              scatterplot = scatterplot,
-              treemap_file = treemap_file))
 }
 
 
@@ -473,7 +478,17 @@ topGO_All <- function(DEG, geneID2GO, name = "GO_analysis",
                                                 ontology = ontology,
                                                 semdata = semdata, Number_GOs = Number_GOs,
                                                 output_prefix = output_prefix)
-    output_list$similarity_results <- similarity_results
+    if (!is.null(similarity_results)) {
+      output_list$similarity_results <- similarity_results
+    } else {
+      warning("Similarity analysis skipped due to insufficient GO terms.")
+      output_list$similarity_results <- list(
+        similarity = NULL,
+        reduced = NULL,
+        scatterplot = NULL,
+        treemap_file = NULL
+      )
+    }
   }
 
   if (save_GeneNames){
