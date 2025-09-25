@@ -232,8 +232,8 @@ analyze_GO_similarity <- function(go_results, orgdb = "org.At.tair.db",
                                          ont = ontology, semdata = semdata,
                                          method = "Rel")
 
-  if (nrow(simMatrix) < 2) {
-    warning("Not enough terms for similarity analysis. Skipping visualization.")
+  if (is.null(simMatrix) || !is.matrix(simMatrix) || nrow(simMatrix) < 2) {
+    warning("Not enough valid GO terms or similarity matrix could not be computed. Skipping visualization.")
     return(list(
       similarity = simMatrix,
       reduced = NULL,
