@@ -47,7 +47,7 @@ library(RNAseqEasy)
 
 The aim of this package is to simplify RNAseq analysis by integrating some pre-existing widely used packages (DESeq2 [@DESeq2], topGO [@topGO], WGCNA [@WGCNA] and rrvgo [@sayols2023], in a tidyverse [@wickham2019] environment) to obtain results and visualization after performing differential expression analysis, PCA, Gene Ontology enrichment and gene co-expression clustering.
 
-```{r Diagram, fig.cap="RNAseqEasy workflow", echo = FALSE}
+```{r Diagram, echo = FALSE}
 library(DiagrammeR)
 
 grViz("
@@ -93,10 +93,10 @@ DiffExprAn <- DESeq2_simple(
   sampleDir = sampleDir, # Directory with your Salmon quantified data
   sample_table = sample_table, # Data frame with your sample names and variables
   tx2gene = Marchantia7_tx2gene, # Data frame with your Gene - Transcript relationship
-  Variable = c("Genotype", "Treatment"), # Variables from sample_table affecting your analysis
-  Design = "Genotype + Treatment + Genotype:Treatment", # How to model samples
-  Name = "Tak1_OPDA", # Name to include in result files
-  Contrast = Tak1_OPDA - Tak1_Mock, 
+  Variable = c("Variable1", "Variable2"), # Variables from sample_table affecting your analysis
+  Design = "Variable1 + Variable2 + Variable1:Variable2", # How to model samples
+  Name = "Name_comparison", # Name to include in result files
+  Contrast = list(c("ContrastA", "ContrastB")) or ContrastA - ContrastB, 
   geneID2GO = geneID2GO, # GO functional annotation
   orgdb = "org.At.tair.db" # Reference organism from rrvgo database
   )
@@ -131,13 +131,15 @@ digraph RNAseqEasy {
 
 ## Input data
 
-The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path [1] of the directory where `quant.sf` samples are saved will be the input. The other input necessary for the analysis is a data frame [2] that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
+The RNAseqEasy package is thought to be used from Salmon mapped and quantified data. The first required input is the path [1] of the directory where `quant.sf` samples are saved. The other input necessary for the analysis is a data frame [2] that includes the name of the samples and the information describing them (i.e. variables or conditions defining the experiment).
 
 ### Salmon data
 
 Salmon [@patro2017] is a widely used software for quantifying transcript abundance. A well detailed tutorial can be found in their [official webpage](https://combine-lab.github.io/salmon/getting_started/). It is a very fast tool for transcript quantification directly from `fastq.gz`files. The only requirement is the creation of an index of the **transcriptome** of the organism we are working with (do not use the genome!!!), also explained in their tutorial.
 
 As a result, we will obtain a folder [1] containing one folder per analyzed sample with its names. In each folder, the main output fail will be named `quant.sf`, which contains the name of each transcript and their abundance in Transcripts Per Million (TPM), among other information (length, effective length and number of reads). The path to this output folder will be input for our analysis [1].
+
+In this example, we will download the `quant.sf` files from Liang et al. [@liang2024] experiment.
 
 ```{r zenodo}
 # URL from Zenodo
@@ -166,7 +168,7 @@ sampleDir <- file.path(output_dir, "02_Salmon")
 
 ### Sample table
 
-For each experiment analysis, it is required to generate a data frame [2] (we call it `sample_table`) which correlates the name of each sequenced sample with the variables describing it in the experiment. So, it will include a `Sample` column including sample names, and an extra column for each variable of factor that were included in the experiment design. In our example, we include 12 different samples (Wendy1 to Wendy12), and there were 3 different variables describing them:
+For each experiment analysis, it is required to generate a data frame [2] (we call it `sample_table`) which correlates the name of each sequenced sample with the variables describing it in the experiment. You can create it in R or import it from a file. It has to include a `Sample` column including sample names, and an extra column for each variable of factor that were included in the experiment design. In our example, we include 12 different samples (Wendy1 to Wendy12), and there were 3 different variables describing them:
 
 -   `Genotype`. Samples were divided in two different genotypes: 'Tak1' (wild-type organisms) and '*gh3a*' (CRISPR-Cas9 mutants).
 -   `Treatment`. Two different treatments were applied to samples: 'Mock' or 'OPDA' (exposure to a high concentration of a plant stress hormone from jasmonic acid family).
@@ -185,7 +187,7 @@ sample_table <- data.frame(
 sample_table
 ```
 
-In differential expression analysis, comparisons are performed against a reference level. By default, R set levels based on alphabetical order for each variable. We can set the specific comparison we want to perform in each analysis, but it is a good practice to set levels order as we want to before we continue. We transform each variable column into factor and establish the level order. In this example, "TaK-1" is the reference genotype, and "Mock" is the reference treatment.
+In differential expression analysis, comparisons are performed against a reference level. By default, R set levels based on alphabetical order for each variable. We can set the specific comparison we want to perform in each analysis, but it is a good practice to set levels order as we want to before we continue. We transform each variable column into factor and establish the level order. In this example, "Tak-1" is the reference genotype, and "Mock" is the reference treatment.
 
 ```{r factors}
 # Convert 'Genotype' into factor, setting "Tak1" as reference
@@ -223,7 +225,7 @@ Marchantia7_tx2gene <- data.frame(Name = Marchantia7_Transcripts) %>%
 head(Marchantia7_tx2gene, 10)
 ```
 
-For this example, functional annotation of Gene Ontologies (GOs) for *Marchantia* genes can be downloaded from the package in a csv file. Many organisms reference databases include this kind of files. If you cannot find them, there are tools and tutorial to annotate your reference genome.
+For this example, functional annotation of Gene Ontologies (GOs) for *Marchantia* genes can be downloaded from the package in a csv file. Many organisms reference databases include this kind of files. If you cannot find them, try to find tools and tutorials to annotate your reference genome.
 
 ```{r FunctionalDB}
 library(RNAseqEasy)
@@ -266,7 +268,7 @@ Now, we are ready to run our differential expression analysis. For that, we will
 
 -   **Name**: We have to include a string to name all files that are going to be generated. In this example, we use the same as the folder where they will be saved ("Tak1_OPDA").
 -   **Variable**: Vector of variables or factors that are affecting gene expression in the experiment.
--   **Design**: Design formula indicating the variables which will be used in the modelling, i.e., which variables we expect that are having an effect in gene expression in the analysis. In this example, we expect that "Genotype" itself (there will be genes which expression will be expected to be affected only by genotype in any condition), "Treatment" itself (there will be genes which expression will be expected to be affected only by treatment in any genotype), and the interaction "Genotype+Treatment" ((there will be genes which expression will be expected to be affected differently by treatment in a genotype compared to the other)), will be affecting gene expression. Therefore, our design formula will be "Genotype + Treatment + Genotype:Treatment". (For more information about design, read the [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html)).
+-   **Design**: Design formula indicating the variables which will be used in the modelling, i.e., which variables we expect that are having an effect in gene expression in the analysis. In this example, we expect that "Genotype" itself (there will be genes which expression will be expected to be affected only by genotype in any condition), "Treatment" itself (there will be genes which expression will be expected to be affected only by treatment in any genotype), and the interaction "Genotype+Treatment" (there will be genes which expression will be expected to be affected differently by treatment in a genotype compared to the other), will be affecting gene expression. Therefore, our design formula will be "Genotype + Treatment + Genotype:Treatment". (For more information about design, read the [DESeq2 vignette](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html)).
 -   **Contrast**: The specific contrast we want to perform to test differential expression. If we do not specify any contrast, the function will stop and there will be printed all possible contrast we can use in the experimental design we are using. There are two different ways to define the contrast we want to:
     -   Condition A - Condition B.
     -   list(c("Contrast")).
@@ -291,7 +293,7 @@ DESeq2_simple(
   )
 ```
 
-After running `DESeq2_simple` with no Contrast parameter, there is an error telling us we have to choose one of the previous contrasts printed in the console. In this example, we want to compare Tak-1 genotype in OPDA treatment samples vs. Tak-1 genotype in Mock conditions. There are two different ways we can set this contrast:
+After running `DESeq2_simple` with no `Contrast` parameter, there is an error telling us we have to choose one of the previous contrasts printed in the console. In this example, we want to compare Tak-1 genotype in OPDA treatment samples vs. Tak-1 genotype in Mock conditions. There are two different ways we can set this contrast:
 
 -   Tak1_OPDA - Tak1_Mock.
 -   list(c("Treatment_OPDA_vs_Mock")). Since we established Tak-1 as our reference genotype (first factor), the treatment OPDA vs Mock contrast will get this comparison in the reference genotype, i.e., Tak-1.
@@ -365,7 +367,7 @@ In our example, both parameters would work the same way, i.e., only including Ta
 
 ### PCA
 
-Apart from differential expression analysis, all samples included in the `DESeq2_simple` function will be compute for principal component analysis and we will obtain a png file of PC1 vs PC2 using 500 top genes by default. If we do not want to generate the PCA, we can set the `PCA` parameter to `FALSE` withing the `DESeq2_simple` function. If we want to perform a different principal component analysis (plotting other component, using a different number of top genes, changing colors, etc...) we can do it by running the `run_pca_analysis` function.
+Apart from differential expression analysis, all samples included in the `DESeq2_simple` function will be compute for principal component analysis and we will obtain a png file of PC1 vs PC2 using 500 top genes by default. If we do not want to generate the PCA, we can set the `PCA` parameter to `FALSE` within the `DESeq2_simple` function. If we want to perform a different principal component analysis (plotting other component, using a different number of top genes, changing colors, etc...) we can do it by running the `run_pca_analysis` function.
 
 ### Output
 
@@ -380,13 +382,18 @@ head(sigtable)
 
 -   A PDF file including a heatmap of $log2(n + 1)$ normalized values of all samples included in the analysis (Name_heatmap.pdf).
 
-```{r heatmap, echo=FALSE, fig.cap="Heatmap of normalized values of DEGs in the OPDA vs Mock comparison for Tak-1 genotype"}
+```{r heatmap1, include = FALSE}
+setwd(file.path(output_Dir_DESeq2))
 ruta_pdf_generado <- file.path(output_Dir_DESeq2, "Tak1_OPDA_heatmap.pdf")
 rutas_png_generadas <- pdftools::pdf_convert(
   pdf = ruta_pdf_generado,
   format = "png",
   dpi = 150 
 )
+setwd(current_dir)
+```
+
+```{r heatmap2, echo=FALSE, fig.cap="Heatmap of normalized values of DEGs in the OPDA vs Mock comparison for Tak-1 genotype"}
 knitr::include_graphics(rutas_png_generadas[1])
 ```
 
@@ -493,23 +500,25 @@ digraph RNAseqEasy {
 Another application of the package is the generation of co-expressed gene modules by the implementation of components from the WGCNA [@WGCNA] package. This functionality is included in the `WGCNA_Modules` function. As `DESeq2_simple` function, it requires to specify the `output_path`, `sampleDir`, `sample_table`, `Variables`, `tx2gene`, `Name`, `geneID2GO` and `Annotation` parameters. The specific parameters that have also to be included in this function are:
 
 -   `DEGs`: A vector of Gene IDs. This will be the input set of genes that we want to cluster. The Gene IDs must correspond to the transcriptome that we are using in the analysis.
--   `Power`: Soft thresholding power used in the network construction (check the [WGNA manual](https://cran.r-project.org/web/packages/WGCNA/WGCNA.pdf) or [tutorial](https://fuzzyatelin.github.io/bioanth-stats/module-F21-Group1/module-F21-Group1.html) for more info. If we run the `WGCNA_Modules` function without the `Power` parameter specified, it will stops and generate a "softthresholdingpower.pdf" file, that can help us to select the power. As an alternative, this table suggest the power to select depending on the number of samples and type of network: ![Suggested Soft thresholding powers](WGCNA_table.png)
+-   `Power`: Soft thresholding power used in the network construction (check the [WGNA manual](https://cran.r-project.org/web/packages/WGCNA/WGCNA.pdf) or [tutorial](https://fuzzyatelin.github.io/bioanth-stats/module-F21-Group1/module-F21-Group1.html) for more info). If we run the `WGCNA_Modules` function without the `Power` parameter specified, it will stops and generate a "softthresholdingpower.pdf" file, that can help us to select the power. As an alternative, this table suggests the power to select depending on the number of samples and type of network: ![Suggested Soft thresholding powers](WGCNA_table.png)
 
 Most of the advanced parameters in for the `blockwiseModules` function of the WGCNA package for the module generation are set to default.
 
-As an example, we will use the output DEGs from the Genotype:Treatment interaction in `DESeq2_simple`, i.e., genes that significantly respond to the OPDA treatment in the *gh3a* genotype in a different way than the Tak-1 genotype. This different response can be in different ways, so we will use the gene co-expression modules to explore this responses.
+As an example, we will use the output DEGs from the Genotype:Treatment interaction in `DESeq2_simple`, i.e., genes that significantly respond to the OPDA treatment in the *gh3a* genotype in a different way than the Tak-1 genotype. This different response can be in different ways, so we will use the gene co-expression modules to explore these responses.
 
 ```{r DEGs_interaction}
-DESeq2_simple_output <- sigtable <- read.table(file.path(output_Dir_interaction, "Genotype_Treatment_interaction.txt"), header = TRUE)
+DESeq2_simple_output <- read.table(file.path(output_Dir_interaction, "Genotype_Treatment_interaction.txt"), header = TRUE)
 
-## We get rownames (GeneIDs) of the output data frame from DESeq2_simple(), applying a filter of log2FC > 1 for Up-regulated DEGs and log2FC < -1 for Down-regulation.
+## We get rownames (GeneIDs) of the output data frame from DESeq2_simple(),
+## applying a filter of log2FC > 1 for Up-regulated DEGs and log2FC < -1 for
+## Down-regulation.
 
 DEGs <- rownames(DESeq2_simple_output %>% filter(log2FoldChange > 1 | log2FoldChange < -1))
 ```
 
 Now that we already have selected our input gene set, we can run the `WGCNA_Modules` function:
 
-```{r WGCNA_Modules_First, error = TRUE}
+```{r WGCNA_Modules_First, error = TRUE, warning=FALSE}
 library(WGCNA)
 dir.create(file.path(output_dir, "WGCNA"))
 output_WGCNA <- file.path(output_dir, "WGCNA")
@@ -527,7 +536,7 @@ COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
 
 We did not include the `Power` parameter, so the function stopped at warned us to select it based on the "softthresholdingpower.pdf" file.
 
-```{r soft1, include=FALSE}
+```{r soft1, include=FALSE, warning=FALSE}
 setwd(output_WGCNA)
 path_pdf_soft <- file.path(output_WGCNA, "softthresholdingpower.pdf")
 path_png_soft <- pdftools::pdf_convert(
@@ -559,7 +568,7 @@ COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
                                    semdata = save)
 ```
 
-There are 10 different clusters that have been generated after the analysis. The average behavior of genes from each category are summarized in the "Summary_Modules_Name.pdf" file:
+There are 6 different clusters or modules that have been generated after the analysis. The average behavior of genes from each category are summarized in the "Summary_Modules_Name.pdf" file:
 
 ```{r Summary_Modules1, include=FALSE}
 setwd(output_WGCNA)
@@ -600,4 +609,3 @@ digraph RNAseqEasy {
 }
 ")
 ```
-
