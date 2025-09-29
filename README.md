@@ -44,5 +44,5 @@ Developed by Salvador Torres Montilla
 
 🔗 [LinkedIn](https://www.linkedin.com/in/salvador-torres-montilla/)
 
-📧 [salvatm18@gmail.com]
+📧 salvatm18@gmail.com
 
