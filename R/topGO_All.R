@@ -423,10 +423,10 @@ GeneNames_GOs <- function(Annotation, geneID2GO, output_dir, DEG, Ontologies = N
 #' @param Number_GOs Number of top GO term names to plot in the scatterplot. Defaults to 20.
 #' @param orgdb OrgDb package name for similarity analysis. Defaults to "org.At.tair.db".
 #' @param semdata Optional precomputed semantic data.
-#' @param save_GeneNames Logical, whether to save genes represented by GO terms of interest.
+#' @param save_GeneNames Logical, whether to save genes represented by GO terms of interest. Defaults to FALSE
 #' @param Annotation Two column data frame. First column must include Gene IDs.
 #' Second column must include functional annotation.
-#' @param Ontologies Character vector of GO terms of interest to search for.
+#' @param Ontologies Character vector of GO terms of interest to search for (only if save_GeneNames = TRUE)
 #'
 #' @return A list with all intermediate and final results.
 #' @export
