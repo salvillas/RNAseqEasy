@@ -586,6 +586,21 @@ setwd(current_dir)
 knitr::include_graphics(path_png_modules[1])
 ```
 
+### Output
+
+-   A tab-delimited TXT file for each module, containing genes included in that module and its TPM expression in each sample of the analysis (Module_genes.txt).
+
+-   A CSV file of two columns, including all genes used as input (`DEGs` parameter) and the module name where they were included (Name_geneInfo.csv).
+
+-   Three PDF files:
+
+    -   Module-trait relationships heatmap of each module and each variable (moduleTraitRelationships.pdf).
+    -   A sample dendrogram to see how samples cluster in the analysis (sampleClustering.pdf).
+    -   A soft thresholding powers plot to help us to select the `Power` parameter (softthresholdingpower.pdf)
+    -   The summary plot showing the average behavior of genes included in each module (Summary_Modules_Name.pdf). We can modify the number of columns to organize modules in this figure by changing the `NumberCol` parameter, and the colors of the lines specifying a named vector in the `Colors_plot` parameter (colors as values, variables as names).
+
+-   A "topGO" folder, including same output files for each module as `DESeq2_simple()` function.
+
 ```{r topGO_All Diagram2, fig.cap="topGO_All() function general scheme", out.height= "70%", echo = FALSE}
 
 grViz("
