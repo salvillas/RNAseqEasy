@@ -507,7 +507,8 @@ Most of the advanced parameters in for the `blockwiseModules` function of the WG
 As an example, we will use the output DEGs from the Genotype:Treatment interaction in `DESeq2_simple`, i.e., genes that significantly respond to the OPDA treatment in the *gh3a* genotype in a different way than the Tak-1 genotype. This different response can be in different ways, so we will use the gene co-expression modules to explore these responses.
 
 ```{r DEGs_interaction}
-DESeq2_simple_output <- read.table(file.path(output_Dir_interaction, "Genotype_Treatment_interaction.txt"), header = TRUE)
+DESeq2_simple_output <- read.table(file.path(output_Dir_interaction, "Genotype_Treatment_interaction.txt"), 
+                                   header = TRUE)
 
 ## We get rownames (GeneIDs) of the output data frame from DESeq2_simple(),
 ## applying a filter of log2FC > 1 for Up-regulated DEGs and log2FC < -1 for
@@ -554,7 +555,7 @@ knitr::include_graphics(path_png_soft[1])
 
 Based on this plot, we will select 7 as the soft thresholding power since it is the first value that rises the threshold.
 
-```{r WGCNA_Modules_Second}
+```{r WGCNA_Modules_Second, warning=FALSE}
 COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
                                    sampleDir = sampleDir,
                                    sample_table = sample_table,
@@ -632,4 +633,6 @@ Gene Ontology Enrichment analysis in this package is based on topGO [@topGO] pac
 -   The type of ontologies to perform GO enrichment is set to Biological Processes ("BP") as default, but it can be changed to Molecular Functions ("MF") or Cellular Component ("CC") in the `ontology` parameter.
 -   Default `algorithm` is "weight01", but it can be changed to "classic", "elim", "weight", "lea" or "parentchild" (read [topGO vignette](https://bioconductor.org/packages/devel/bioc/vignettes/topGO/inst/doc/topGO.pdf) for more information).
 -   Default `statistic` is "fisher", but it can be changed to "ks", "t", "globaltest" or "sum" (read [topGO vignette](https://bioconductor.org/packages/devel/bioc/vignettes/topGO/inst/doc/topGO.pdf) for more information).
--   If we want to explore which genes are represented by specific GO terms of the analysis, we can set `save_GeneNames` parameter to `TRUE` and include a character vector with the GO IDs in the `Ontologies` parameter. It will generate a XLSX file with a spreadsheet for each ontology. Be sure that every GO ID is represented as an output of the `topGO_All()` function. 
+-   If we want to explore which genes are represented by specific GO terms of the analysis, we can set `save_GeneNames` parameter to `TRUE` and include a character vector with the GO IDs in the `Ontologies` parameter. It will generate a XLSX file with a spreadsheet for each ontology. Be sure that every GO ID is represented as an output of the `topGO_All()` function.
+
+# Bibliography
