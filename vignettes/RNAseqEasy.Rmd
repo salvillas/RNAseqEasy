@@ -102,7 +102,7 @@ DiffExprAn <- DESeq2_simple(
   )
 ```
 
-```{r DESeq2_simple Diagram2, fig.cap="DESeq2_simple() function general scheme", echo = FALSE}
+```{r DESeq2_simple Diagram2, fig.cap="DESeq2_simple() function general scheme", out.height= "70%", echo = FALSE}
 grViz("
 digraph RNAseqEasy {
   graph [layout = dot, rankdir = TB]
@@ -392,7 +392,7 @@ knitr::include_graphics(rutas_png_generadas[1])
 
 -   A png file including the PCA of all samples included in the analysis, only if `PCA` parameter is set as the `TRUE` default value (PCA_Name.png).
 
-```{r PCA, echo=FALSE, fig.cap="PCA plot of PC1 vs PC2, using 500 top genes", out.height= 0.6}
+```{r PCA, echo=FALSE, fig.cap="PCA plot of PC1 vs PC2, using 500 top genes", out.height= "40%"}
 ruta_PCA_generado <- file.path(output_Dir_DESeq2, "PCA_Tak1_OPDA.png")
 knitr::include_graphics(ruta_PCA_generado)
 ```
@@ -462,6 +462,34 @@ knitr::include_graphics(path_png_bubble[1])
 
 ## Clustering of co-expressed genes
 
+```{r WGCNA_Module Diagram2, fig.cap="WGCNA_Module() function general scheme", out.height= "70%", echo = FALSE}
+
+grViz("
+digraph RNAseqEasy {
+  graph [layout = dot, rankdir = TB]
+
+  node [shape = box, style = filled, fillcolor = lightblue, fontname = Helvetica]
+
+  A [label = 'Transcript IDs vector']
+  B [label = 'quant files \n(Salmon)']
+  C [label = 'Sample data']
+  D [label = 'Transcripts-Genes data frame \n(tx2gene)']
+  E [label = 'GO annotation']
+  F [label = 'WGCNA_Module() function', fillcolor = '#ffffe0']
+  G [label = 'Co-expression cluster analysis \n(WGCNA)']
+  H [label = 'Gene Ontology Enrichment \n(topGO)']
+
+  A -> F
+  B -> F
+  C -> F
+  D -> F
+  E -> F
+  F -> G
+  F -> H
+}
+")
+```
+
 Another application of the package is the generation of co-expressed gene modules by the implementation of components from the WGCNA [@WGCNA] package. This functionality is included in the `WGCNA_Modules` function. As `DESeq2_simple` function, it requires to specify the `output_path`, `sampleDir`, `sample_table`, `Variables`, `tx2gene`, `Name`, `geneID2GO` and `Annotation` parameters. The specific parameters that have also to be included in this function are:
 
 -   `DEGs`: A vector of Gene IDs. This will be the input set of genes that we want to cluster. The Gene IDs must correspond to the transcriptome that we are using in the analysis.
@@ -476,7 +504,7 @@ DESeq2_simple_output <- sigtable <- read.table(file.path(output_Dir_interaction,
 
 ## We get rownames (GeneIDs) of the output data frame from DESeq2_simple(), applying a filter of log2FC > 1 for Up-regulated DEGs and log2FC < -1 for Down-regulation.
 
-DEGs <- rownames(DESeq2_simple_output filter(log2FoldChange > 1 | log2FoldChange < -1))
+DEGs <- rownames(DESeq2_simple_output %>% filter(log2FoldChange > 1 | log2FoldChange < -1))
 ```
 
 Now that we already have selected our input gene set, we can run the `WGCNA_Modules` function:
@@ -515,7 +543,7 @@ setwd(current_dir)
 knitr::include_graphics(path_png_soft[1])
 ```
 
-Based on this plot, we will select 22 as the soft thresholding power since it is the first value that rises the threshold.
+Based on this plot, we will select 7 as the soft thresholding power since it is the first value that rises the threshold.
 
 ```{r WGCNA_Modules_Second}
 COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
@@ -525,7 +553,7 @@ COIOPDA_int_Tak1OPDA_WGCNA <- WGCNA_Modules(output_path =output_WGCNA,
                                    Variables = c("Genotype", "Treatment"),
                                    tx2gene = Marchantia7_tx2gene,
                                    Name = "Genotype_Treatment_Interaction",
-                                   Power = 22,
+                                   Power = 7,
                                    NumberCol = 1,
                                    geneID2GO = geneID2GO,
                                    semdata = save)
@@ -549,7 +577,7 @@ setwd(current_dir)
 knitr::include_graphics(path_png_modules[1])
 ```
 
-```{r topGO_All Diagram2, fig.cap="topGO_All() function general scheme, echo = FALSE}
+```{r topGO_All Diagram2, fig.cap="topGO_All() function general scheme", out.height= "70%", echo = FALSE}
 
 grViz("
 digraph RNAseqEasy {
@@ -573,30 +601,3 @@ digraph RNAseqEasy {
 ")
 ```
 
-```{r WGCNA_Module Diagram2, fig.cap="WGCNA_Module() function general scheme, out.height= 0.5, echo = FALSE}
-
-grViz("
-digraph RNAseqEasy {
-  graph [layout = dot, rankdir = TB]
-
-  node [shape = box, style = filled, fillcolor = lightblue, fontname = Helvetica]
-
-  A [label = 'Transcript IDs vector']
-  B [label = 'quant files \n(Salmon)']
-  C [label = 'Sample data']
-  D [label = 'Transcripts-Genes data frame \n(tx2gene)']
-  E [label = 'GO annotation']
-  F [label = 'WGCNA_Module() function', fillcolor = '#ffffe0']
-  G [label = 'Co-expression cluster analysis \n(WGCNA)']
-  H [label = 'Gene Ontology Enrichment \n(topGO)']
-
-  A -> F
-  B -> F
-  C -> F
-  D -> F
-  E -> F
-  F -> G
-  F -> H
-}
-")
-```

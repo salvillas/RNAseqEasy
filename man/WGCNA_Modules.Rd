@@ -18,6 +18,7 @@ WGCNA_Modules(
   Name,
   Colors_plot = NULL,
   NumberCol = 1,
+  TOMType = "signed",
   geneID2GO,
   Annotation,
   ...
@@ -45,6 +46,8 @@ WGCNA_Modules(
 \item{Colors_plot}{Named vector of colors for groups.}
 
 \item{NumberCol}{Integer. Number of columns for facet_wrap in ggplot.}
+
+\item{TOMType}{One of "none", "unsigned", "signed", "signed Nowick", "unsigned 2", "signed 2" and "signed Nowick 2". Default to "signed".}
 
 \item{geneID2GO}{Named list mapping gene IDs to GO terms.}
 
