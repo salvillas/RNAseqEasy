@@ -1,5 +1,7 @@
 # RNAseqEasy
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17228137.svg)](https://doi.org/10.5281/zenodo.17228137)
+
 **RNAseqEasy** is an R package designed to streamline RNAseq data analysis in a `tidyverse` environment. It integrates key functionalities from **DESeq2**, **topGO**, and **WGCNA**, making it easier to perform:
 
 - 📊 Differential gene expression analysis  
