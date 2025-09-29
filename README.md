@@ -18,4 +18,4 @@ remotes::install_github("salvillas/RNAseqEasy")
 
 ## Current vignette
 
-You can access to the more updated tutorial of the package from this [HTML vignette](https://github.com/salvillas/RNAseqEasy/blob/main/vignettes/RNAseqEasy.html).
+You can access to the more updated tutorial of the package from this [HTML vignette](https://salvillas.github.io/RNAseqEasy/).
