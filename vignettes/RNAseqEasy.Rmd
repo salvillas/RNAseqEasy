@@ -601,6 +601,8 @@ knitr::include_graphics(path_png_modules[1])
 
 -   A "topGO" folder, including same output files for each module as `DESeq2_simple()` function.
 
+## Gene Ontology Enrichment
+
 ```{r topGO_All Diagram2, fig.cap="topGO_All() function general scheme", out.height= "70%", echo = FALSE}
 
 grViz("
@@ -624,3 +626,10 @@ digraph RNAseqEasy {
 }
 ")
 ```
+
+Gene Ontology Enrichment analysis in this package is based on topGO [@topGO] package, and the function that performs it is `topGO_All()`. This function is also integrated in the `DESeq2_simple()` and `WGCNA_Module()` functions. It requires a vector or data frame with transcript IDs (if it is a data frame, it should follow the `DESeq2_simple()` output format, where Gene IDs are row names). It also requires the `Name`, `Annotation` and `orgdb` parameters.
+
+-   The type of ontologies to perform GO enrichment is set to Biological Processes ("BP") as default, but it can be changed to Molecular Functions ("MF") or Cellular Component ("CC") in the `ontology` parameter.
+-   Default `algorithm` is "weight01", but it can be changed to "classic", "elim", "weight", "lea" or "parentchild" (read [topGO vignette](https://bioconductor.org/packages/devel/bioc/vignettes/topGO/inst/doc/topGO.pdf) for more information).
+-   Default `statistic` is "fisher", but it can be changed to "ks", "t", "globaltest" or "sum" (read [topGO vignette](https://bioconductor.org/packages/devel/bioc/vignettes/topGO/inst/doc/topGO.pdf) for more information).
+-   If we want to explore which genes are represented by specific GO terms of the analysis, we can set `save_GeneNames` parameter to `TRUE` and include a character vector with the GO IDs in the `Ontologies` parameter. It will generate a XLSX file with a spreadsheet for each ontology. Be sure that every GO ID is represented as an output of the `topGO_All()` function. 
